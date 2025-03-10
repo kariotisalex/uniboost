@@ -1,6 +1,6 @@
 package com.alexkariotis.uniboost.dto.post;
 
-import com.alexkariotis.uniboost.dto.user.UserResponseDto;
+import com.alexkariotis.uniboost.dto.user.UserPostResponseDto;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -23,7 +23,9 @@ public class PostResponseDto {
 
     private Boolean isPersonal;
 
-    private UserResponseDto userOwner;
+    private String place;
 
-    private List<UserResponseDto> enrolledUsers;
+    private UserPostResponseDto userOwner;
+
+    private List<UserPostResponseDto> enrolledUsers;
 }

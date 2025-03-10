@@ -30,6 +30,9 @@ public class Post {
     @Column(name = "is_personal", nullable = false)
     private Boolean isPersonal;
 
+    @Column(name = "place", nullable = false)
+    private String place;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     private User createdBy;

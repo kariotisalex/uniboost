@@ -17,7 +17,6 @@ spring:
       ddl-auto: validate
       naming:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
-    show-sql: true
   flyway:
     enabled: true
     baseline-on-migrate: true

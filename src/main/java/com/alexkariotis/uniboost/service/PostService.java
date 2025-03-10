@@ -7,11 +7,12 @@ import com.alexkariotis.uniboost.domain.repository.UserRepository;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,9 +23,8 @@ public class PostService {
 
     private final UserRepository userRepository;
 
-
-    public Try<List<Post>> findAll() {
-        return Try.of(postRepository::findAll);
+    public Try<Page<Post>> findByTitle(String title, Integer page, Integer size, String sort) {
+        return Try.of(() -> postRepository.findByTitle(title.toLowerCase(), PageRequest.of(page, size, Sort.by(sort).ascending())));
     }
 
     public Try<Post> enroll(final UUID userId, final UUID postId) {
