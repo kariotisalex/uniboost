@@ -1,7 +1,9 @@
 package com.alexkariotis.uniboost.mapper.user;
 
+import com.alexkariotis.uniboost.common.RoleEnum;
 import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.dto.post.PostUserResponseDto;
+import com.alexkariotis.uniboost.dto.user.UserCreateDto;
 import com.alexkariotis.uniboost.dto.user.UserResponseDto;
 
 import java.util.stream.Collectors;
@@ -38,5 +40,20 @@ public class UserMapper {
         }
 
         return dto;
+    }
+
+    public static User userCreateDtoToUser(UserCreateDto dto) {
+        if (dto == null) {
+            return null;
+        }
+        User user = new User();
+        user.setUsername(dto.getUsername());
+        user.setPassword(dto.getPassword());
+        user.setFirstname(dto.getFirstName());
+        user.setLastname(dto.getLastName());
+        user.setEmail(dto.getEmail());
+        user.setPhone(dto.getPhone());
+        user.setRole(RoleEnum.USER);
+        return user;
     }
 }

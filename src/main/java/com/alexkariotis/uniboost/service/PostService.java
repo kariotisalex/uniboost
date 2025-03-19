@@ -27,13 +27,13 @@ public class PostService {
         return Try.of(() -> postRepository.findByTitle(title.toLowerCase(), PageRequest.of(page, size, Sort.by(sort).ascending())));
     }
 
-    public Try<Post> enroll(final UUID userId, final UUID postId) {
-        return Try.of(() -> postRepository.findById(postId))
+    public Try<Post> enroll(final String username, final UUID postId) {
+        return Try.of(() -> postRepository.findById(postId)) // d
                 .flatMap(postOpt -> Option.ofOptional(postOpt)
                         .toTry(() -> new IllegalArgumentException("There is no post with id: " + postId)))
-                .flatMap(post -> Try.of(() -> userRepository.findById(userId))
+                .flatMap(post -> Try.of(() -> userRepository.findByUsername(username))
                         .flatMap(userOpt -> Option.ofOptional(userOpt)
-                                .toTry(() -> new IllegalArgumentException("There is no user with id: " + userId)))
+                                .toTry(() -> new IllegalArgumentException("There is no user with username: " + username)))
                         .flatMap(user -> {
                             io.vavr.collection.List<User> enrolledUsers = io.vavr.collection.List.ofAll(post.getEnrolledUsers());
 
@@ -41,9 +41,9 @@ public class PostService {
                                     .filter(p -> p.getMaxEnrolls() > enrolledUsers.size(),
                                             () -> new IllegalStateException("Cannot enroll: The lesson is full."))
                                     .filter(p -> !p.getCreatedBy().equals(user),
-                                            () -> new IllegalArgumentException("You cannot enroll if you are the owner of post" + userId))
+                                            () -> new IllegalArgumentException("You cannot enroll if you are the owner of post" + username))
                                     .filter(p -> !enrolledUsers.contains(user),
-                                            () -> new IllegalArgumentException("You have enrolled the user with id: " + userId))
+                                            () -> new IllegalArgumentException("You have enrolled the user with id: " + username))
                                     .map(p -> {
                                         enrolledUsers.append(user);
                                         p.setEnrolledUsers(enrolledUsers.asJava());
@@ -54,19 +54,19 @@ public class PostService {
                 .onFailure(Throwable::printStackTrace);
     }
 
-    public Try<Post> disenroll(UUID userId, UUID postId) {
+    public Try<Post> disenroll(final String username, final UUID postId) {
         return Try.of(() -> postRepository.findById(postId))
                 .flatMap(postOpt -> Option.ofOptional(postOpt)
                         .toTry(() -> new IllegalArgumentException("There is no post with id: " + postId)))
-                .flatMap(post -> Try.of(() -> userRepository.findById(userId))
+                .flatMap(post -> Try.of(() -> userRepository.findByUsername(username))
                         .flatMap(userOpt -> Option.ofOptional(userOpt)
-                                .toTry(() -> new IllegalArgumentException("There is no user with id: " + userId)))
+                                .toTry(() -> new IllegalArgumentException("There is no user with id: " + username)))
                         .flatMap(user -> {
                             java.util.List<User> enrolledUsers = new ArrayList<>(post.getEnrolledUsers());
 
                             return Try.success(post)
                                     .filter(p -> enrolledUsers.contains(user),
-                                            () -> new IllegalArgumentException("User with id: " + userId + " is not enrolled in post: " + postId))
+                                            () -> new IllegalArgumentException("User with username: " + username + " is not enrolled in post: " + postId))
                                     .map(p -> {
                                         enrolledUsers.remove(user);
                                         p.setEnrolledUsers(enrolledUsers);
