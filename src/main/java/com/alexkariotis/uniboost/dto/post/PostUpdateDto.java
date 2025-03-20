@@ -1,16 +1,21 @@
 package com.alexkariotis.uniboost.dto.post;
 
 import com.alexkariotis.uniboost.domain.entity.User;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.List;
+import java.util.UUID;
+
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
-public class PostCreateDto {
+public class PostUpdateDto {
+
+    private UUID id;
 
     private String title;
 
@@ -21,5 +26,4 @@ public class PostCreateDto {
     private Boolean isPersonal;
 
     private String place;
-
 }

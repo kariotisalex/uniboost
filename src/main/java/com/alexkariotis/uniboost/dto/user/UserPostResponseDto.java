@@ -10,7 +10,6 @@ import java.util.UUID;
 @Getter
 @RequiredArgsConstructor
 public class UserPostResponseDto {
-    private UUID id;
     private String username;
     private String firstname;
     private String lastname;

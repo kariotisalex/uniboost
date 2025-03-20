@@ -1,9 +1,13 @@
 package com.alexkariotis.uniboost.service;
 
+import aj.org.objectweb.asm.commons.Remapper;
 import com.alexkariotis.uniboost.domain.entity.Post;
 import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.PostRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
+import com.alexkariotis.uniboost.dto.post.PostCreateDto;
+import com.alexkariotis.uniboost.dto.post.PostUpdateDto;
+import com.alexkariotis.uniboost.mapper.post.PostMapper;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
 import lombok.RequiredArgsConstructor;
@@ -11,9 +15,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,10 +33,17 @@ public class PostService {
 
     private final UserRepository userRepository;
 
-    public Try<Page<Post>> findByTitle(String title, Integer page, Integer size, String sort) {
-        return Try.of(() -> postRepository.findByTitle(title.toLowerCase(), PageRequest.of(page, size, Sort.by(sort).ascending())));
+    public Try<Page<Post>> findByTitle(String title, Integer page, Integer size, String sort, String username) {
+        return Try.of(() -> postRepository
+                .findByTitle(title.toLowerCase(), username, PageRequest.of(page, size, Sort.by(sort).ascending())));
     }
 
+    public Try<Page<Post>> findByUsername(int page, int size, String sort, String username) {
+        return Try.of(() -> postRepository
+                .findByUsername(username, PageRequest.of(page,size,Sort.by(sort).ascending())));
+    }
+
+    @Transactional
     public Try<Post> enroll(final String username, final UUID postId) {
         return Try.of(() -> postRepository.findById(postId)) // d
                 .flatMap(postOpt -> Option.ofOptional(postOpt)
@@ -66,7 +83,9 @@ public class PostService {
 
                             return Try.success(post)
                                     .filter(p -> enrolledUsers.contains(user),
-                                            () -> new IllegalArgumentException("User with username: " + username + " is not enrolled in post: " + postId))
+                                            () -> new IllegalArgumentException(
+                                                    "User with username: " + username +
+                                                            " is not enrolled in post: " + postId))
                                     .map(p -> {
                                         enrolledUsers.remove(user);
                                         p.setEnrolledUsers(enrolledUsers);
@@ -74,5 +93,78 @@ public class PostService {
                                         return postRepository.saveAndFlush(p);
                                     });
                         }));
+    }
+
+
+    public Try<PostCreateDto> create(PostCreateDto createDto, String username) {
+        return Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
+                .getOrElseThrow(() -> new IllegalArgumentException("There is no user with username: " + username)))
+                .map(user -> {
+                    Post post = new Post();
+                    post.setId(UUID.randomUUID());
+                    post.setTitle(createDto.getTitle());
+                    post.setDescription(createDto.getDescription());
+                    post.setMaxEnrolls(createDto.getMaxEnrolls());
+                    post.setIsPersonal(createDto.getIsPersonal());
+                    post.setPlace(createDto.getPlace());
+                    post.setCreatedBy(user);
+                    post.setCreatedAt(OffsetDateTime.now());
+                    post.setUpdatedAt(OffsetDateTime.now());
+//                    post.setEnrolledUsers(new ArrayList<>());
+                    return postRepository.saveAndFlush(post);
+                })
+                .map(PostMapper::postToPostCreateDto)
+                .onFailure(Throwable::printStackTrace);
+
+    }
+
+    public Try<PostUpdateDto> update(PostUpdateDto updateDto, String username) {
+        return Try.of(() -> Option.ofOptional(postRepository.findById(updateDto.getId()))
+                        .getOrElseThrow(() -> new IllegalArgumentException(
+                                "There is no post with id: "+updateDto.getId())))
+                .filter(post -> Objects.equals(post.getCreatedBy().getUsername(), username),
+                        () -> new IllegalArgumentException("Updating of this post is not possible due to user is not the owner of the post!"))
+
+                        .map(post -> {
+                            post.setTitle(updateDto.getTitle());
+                            post.setDescription(updateDto.getDescription());
+                            post.setMaxEnrolls(updateDto.getMaxEnrolls());
+                            post.setIsPersonal(updateDto.getIsPersonal());
+                            post.setPlace(updateDto.getPlace());
+                            post.setUpdatedAt(OffsetDateTime.now());
+                            return postRepository.saveAndFlush(post);
+                        })
+                        .map(PostMapper::postToPostUpdateDto)
+                        .onFailure(Throwable::printStackTrace);
+    }
+
+    public Try<Void> delete(String username, UUID postId) {
+        return Try.of(() -> Option.ofOptional(postRepository.findById(postId))
+                .getOrElseThrow(() -> new IllegalArgumentException("There is no post with id: " + postId)))
+                .filter(post -> post.getCreatedBy().getUsername().equals(username),
+                        () -> new IllegalArgumentException(
+                                "Deleting of this post is not possible due to user is not the owner of the post!"))
+                .flatMap(post -> Try.run(()-> postRepository.deleteById(postId)));
+
+    }
+
+    public Try<Void> deleteEnrolledStudent(String username, UUID postId, UUID userId) {
+        return Try.of(() -> Option.ofOptional(postRepository.findById(postId))
+                .getOrElseThrow(() -> new IllegalArgumentException("There is no post with id: " + postId)))
+                .filter(post -> post.getCreatedBy().getUsername().equals(username),
+                        () -> new IllegalArgumentException(
+                                "Deleting of enrolled student of post is not possible due to user is not the owner of the post!"))
+                .map(post -> {
+
+                    post.setEnrolledUsers(post
+                            .getEnrolledUsers()
+                            .stream()
+                            .filter(user -> !user.getId().equals(userId))
+                            .collect(Collectors.toList()));
+                    return postRepository.saveAndFlush(post);
+                }).onFailure(Throwable::printStackTrace)
+                .map(post -> null);
+//                ;
+
     }
 }

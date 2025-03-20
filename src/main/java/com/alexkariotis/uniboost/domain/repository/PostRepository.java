@@ -18,6 +18,11 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
     Optional<Post> findById(@NonNull UUID id);
 
-    @Query("SELECT p FROM Post p WHERE LOWER( p.title) LIKE %:title%")
-    Page<Post> findByTitle(@Param("title")String title, Pageable pageable);
+    @Query("SELECT p " +
+            "FROM Post p " +
+            "WHERE LOWER( p.title) LIKE %:title% AND p.createdBy.username != :username")
+    Page<Post> findByTitle(@Param("title")String title, @Param("username") String username, Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.createdBy.username=:username")
+    Page<Post> findByUsername(@Param("username")String username, Pageable pageable);
 }

@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -37,7 +38,7 @@ public class UserService {
                                                 .map(u -> {
                                                     u.setId(UUID.randomUUID());
                                                     u.setPassword(passwordEncoder.encode(u.getPassword()));
-                                                    u.setCreatedAt(LocalDateTime.now());
+                                                    u.setCreatedAt(OffsetDateTime.now());
                                                     return u;
                                                 })
                                                 .map(userRepository::save)

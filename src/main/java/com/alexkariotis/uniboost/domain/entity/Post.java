@@ -1,9 +1,12 @@
 package com.alexkariotis.uniboost.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,9 +48,9 @@ public class Post {
     private List<User> enrolledUsers;
 
     @Column(name = "created_at")
-    private Date createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "updated_at")
-    private Date updatedAt;
+    private OffsetDateTime updatedAt;
 
 }
