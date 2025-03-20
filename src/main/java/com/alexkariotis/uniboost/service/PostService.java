@@ -1,6 +1,5 @@
 package com.alexkariotis.uniboost.service;
 
-import aj.org.objectweb.asm.commons.Remapper;
 import com.alexkariotis.uniboost.domain.entity.Post;
 import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.PostRepository;
@@ -17,10 +16,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;

@@ -1,9 +1,6 @@
 package com.alexkariotis.uniboost.dto.post;
 
-import com.alexkariotis.uniboost.domain.entity.User;
 import lombok.*;
-
-import java.util.List;
 
 @Getter
 @Setter
