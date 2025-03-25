@@ -69,6 +69,9 @@ public class User implements UserDetails {
     @Column(name = "role")
     private RoleEnum role;
 
+    @OneToMany(mappedBy = "user")
+    private List<Token> tokens;
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
