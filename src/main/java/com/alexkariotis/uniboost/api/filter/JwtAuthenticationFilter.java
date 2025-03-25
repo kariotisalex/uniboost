@@ -1,6 +1,6 @@
 package com.alexkariotis.uniboost.api.filter;
 
-import com.alexkariotis.uniboost.service.JwtService;
+import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +21,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
 
 
@@ -36,13 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if(authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
-            username = jwtService.extractUsername(jwt);
+            username = jwtUtils.extractUsername(jwt);
         }
 
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if(jwtService.isTokenValid(jwt, userDetails)) {
+            if(jwtUtils.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()
                         );
