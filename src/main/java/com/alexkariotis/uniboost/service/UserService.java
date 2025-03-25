@@ -48,18 +48,8 @@ public class UserService {
                                     return u;
                                 })
                                 .map(userRepository::save)
-                                .map(jwtUtils::generateToken)
-                                .map(token -> {
-                                    Token tokenObj = Token.builder()
-                                            .id(UUID.randomUUID())
-                                            .user(user)
-                                            .token(token)
-                                            .tokenTypeEnum(TokenTypeEnum.BEARER)
-                                            .revoked(false)
-                                            .expired(false)
-                                            .build();
-                                    return tokenRepository.save(tokenObj);
-                                })
+                                .map(fetchedUser -> Tuple.of(fetchedUser, jwtUtils.generateToken(fetchedUser)))
+                                .map(tuple -> createAndSaveToken(tuple._1, tuple._2))
                                 .map(tokenObj -> new AuthenticationResponseDto(tokenObj.getToken()))
                         ,ignoredUserByEmail -> Try.failure(new IllegalArgumentException("Email already exists")))
                 ,ignoredUserByUsername -> Try.failure(new IllegalArgumentException("Username already exists")));
@@ -79,9 +69,7 @@ public class UserService {
                         }))
                 .map(user -> Tuple.of(user, jwtUtils.generateToken(user)))
                 .flatMap(tuple -> {
-                    User userObj = tuple._1;
-                    String jwt = tuple._2;
-                    return Try.of(()-> tokenRepository.findAllValidTokensByUser(userObj.getId()))
+                    return Try.of(()-> tokenRepository.findAllValidTokensByUser(tuple._1.getId()))
                             .map(tokens -> tokens
                                     .stream()
                                     .map(token -> {
@@ -92,19 +80,20 @@ public class UserService {
                             .map(tokenRepository::saveAll)
                             .map(ignored -> tuple);
                 })
-                .map(tuple -> {
-                    Token tokenObj = Token.builder()
-                            .id(UUID.randomUUID())
-                            .user(tuple._1)
-                            .token(tuple._2)
-                            .tokenTypeEnum(TokenTypeEnum.BEARER)
-                            .revoked(false)
-                            .expired(false)
-                            .build();
-                    return tokenRepository.save(tokenObj);
-                })
+                .map(tuple -> createAndSaveToken(tuple._1, tuple._2))
                 .map(tokenObj -> new AuthenticationResponseDto(tokenObj.getToken()));
     }
 
 
+    private Token createAndSaveToken(User user, String token) {
+        Token tokenObj = Token.builder()
+                .id(UUID.randomUUID())
+                .user(user)
+                .token(token)
+                .tokenTypeEnum(TokenTypeEnum.BEARER)
+                .revoked(false)
+                .expired(false)
+                .build();
+        return tokenRepository.save(tokenObj);
+    }
 }

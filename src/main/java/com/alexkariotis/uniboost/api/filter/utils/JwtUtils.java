@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
@@ -16,6 +17,7 @@ import java.util.function.Function;
 /**
  * This is a service that validates, creates and extracts info from JWT
  */
+@Service
 public class JwtUtils {
 
 
@@ -53,9 +55,9 @@ public class JwtUtils {
      * Firstly, the client needs to send some data to verify himself in jwt token, after that
      * backend sends to client a unique token that has been identified and has limited identified period
      * asks the system to identify himself again.
-     * @param claims
-     * @param userDetails
-     * @return
+     * @param claims .
+     * @param userDetails .
+     * @return .
      */
     public String generateToken(Map<String, Object> claims, UserDetails userDetails) {
          return Jwts

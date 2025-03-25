@@ -1,6 +1,7 @@
 package com.alexkariotis.uniboost.api.filter;
 
 import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
+import com.alexkariotis.uniboost.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
+    private final TokenService tokenService;
 
 
     @Override
@@ -42,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if(jwtUtils.isTokenValid(jwt, userDetails)) {
+            if(jwtUtils.isTokenValid(jwt, userDetails) && tokenService.isTokenValid(jwt)) {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()
                         );
