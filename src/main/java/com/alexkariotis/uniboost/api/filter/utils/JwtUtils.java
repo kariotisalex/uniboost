@@ -1,13 +1,11 @@
-package com.alexkariotis.uniboost.service;
+package com.alexkariotis.uniboost.api.filter.utils;
 
 import com.alexkariotis.uniboost.common.Constants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
@@ -18,8 +16,7 @@ import java.util.function.Function;
 /**
  * This is a service that validates, creates and extracts info from JWT
  */
-@Service
-public class JwtService {
+public class JwtUtils {
 
 
 
