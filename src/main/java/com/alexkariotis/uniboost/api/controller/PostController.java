@@ -3,7 +3,7 @@ package com.alexkariotis.uniboost.api.controller;
 import com.alexkariotis.uniboost.common.Constants;
 import com.alexkariotis.uniboost.dto.post.*;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
-import com.alexkariotis.uniboost.service.JwtService;
+import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
 import com.alexkariotis.uniboost.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class PostController {
 
     private final PostService postService;
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
     /**
      * Fetch posts by searching or all posts paginated without fetching posts created
@@ -42,7 +42,7 @@ public class PostController {
             @RequestHeader("Authorization") String auth
 
     ) {
-        String username = jwtService.extractUsername(auth.substring(7));
+        String username = jwtUtils.extractUsername(auth.substring(7));
 
         log.info("PostController.getPosts()");
         return postService.findByTitle(search, page, size, sort, username)
@@ -69,7 +69,7 @@ public class PostController {
             @RequestParam(name = "sort", required = false, defaultValue = "updatedAt") String sort,
             @RequestHeader("Authorization") String auth
     ) {
-        String username = jwtService.extractUsername(auth.substring(7));
+        String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.getOwnersPosts()");
 
         return postService.findByUsername(page, size, sort, username)
@@ -86,7 +86,7 @@ public class PostController {
             @RequestBody PostCreateDto createDto,
             @RequestHeader("Authorization") String auth
     ) {
-        String username = jwtService.extractUsername(auth.substring(7));
+        String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.create()");
 
         return postService.create(createDto, username)
@@ -100,7 +100,7 @@ public class PostController {
             @RequestBody PostUpdateDto updateDto,
             @RequestHeader("Authorization") String auth
     ) {
-        String username = jwtService.extractUsername(auth.substring(7));
+        String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.update()");
 
         return postService.update(updateDto, username)
@@ -113,7 +113,7 @@ public class PostController {
             @RequestHeader("Authorization") String auth,
             @PathVariable("postId") UUID postId
     ) {
-        String username = jwtService.extractUsername(auth.substring(7));
+        String username = jwtUtils.extractUsername(auth.substring(7));
 
         log.info("PostController.delete()");
         return postService
@@ -129,7 +129,7 @@ public class PostController {
             @PathVariable("postId") UUID postId,
             @PathVariable("userId") UUID userId
     ) {
-        String username = jwtService.extractUsername(auth.substring(7));
+        String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.deleteEnrolledStudent()");
 
         return postService
@@ -153,7 +153,7 @@ public class PostController {
             @PathVariable("postId") UUID postId
     ) {
 
-        String username = jwtService.extractUsername(auth.substring(7));
+        String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.enroll(), {} : {}", username, postId);
         return postService.enroll(username, postId)
                 .map(PostMapper::postToPostResponseDto)
@@ -172,7 +172,7 @@ public class PostController {
             @RequestHeader("Authorization") String auth,
             @PathVariable("postId") UUID postId
     ) {
-        String username = jwtService.extractUsername(auth.substring(7));
+        String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.disenroll(), {} : {}", username, postId);
         return postService.disenroll(username, postId)
                 .map(PostMapper::postToPostResponseDto)
