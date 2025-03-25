@@ -68,8 +68,7 @@ public class UserService {
                             throw new IllegalArgumentException("Wrong password provided", e);
                         }))
                 .map(user -> Tuple.of(user, jwtUtils.generateToken(user)))
-                .flatMap(tuple -> {
-                    return Try.of(()-> tokenRepository.findAllValidTokensByUser(tuple._1.getId()))
+                .flatMap(tuple -> Try.of(()-> tokenRepository.findAllValidTokensByUser(tuple._1.getId()))
                             .map(tokens -> tokens
                                     .stream()
                                     .map(token -> {
@@ -78,8 +77,7 @@ public class UserService {
                                         return token;
                                     }).toList())
                             .map(tokenRepository::saveAll)
-                            .map(ignored -> tuple);
-                })
+                            .map(ignored -> tuple))
                 .map(tuple -> createAndSaveToken(tuple._1, tuple._2))
                 .map(tokenObj -> new AuthenticationResponseDto(tokenObj.getToken()));
     }

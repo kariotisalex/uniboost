@@ -1,6 +1,5 @@
 package com.alexkariotis.uniboost.service;
 
-import com.alexkariotis.uniboost.domain.entity.Token;
 import com.alexkariotis.uniboost.domain.repository.TokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
