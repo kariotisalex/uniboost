@@ -1,10 +1,12 @@
 package com.alexkariotis.uniboost.api.filter.utils;
 
-import com.alexkariotis.uniboost.common.Constants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -17,10 +19,15 @@ import java.util.function.Function;
 /**
  * This is a service that validates, creates and extracts info from JWT
  */
+@Getter
+@Setter
 @Service
+@ConfigurationProperties(prefix = "security")
 public class JwtUtils {
 
-
+    private String secretKey;
+    private Long jwtExpiration;
+    private Long refreshExpiration;
 
     public String extractUsername(String token) {
         return getClaim(token, Claims::getSubject);
@@ -60,14 +67,24 @@ public class JwtUtils {
      * @return .
      */
     public String generateToken(Map<String, Object> claims, UserDetails userDetails) {
-         return Jwts
-                 .builder()
-                 .claims(claims)
-                 .subject(userDetails.getUsername())
-                 .issuedAt(new Date(System.currentTimeMillis()))
-                 .expiration(new Date(System.currentTimeMillis() + Constants.EXPIRATION_TIME))
-                 .signWith(getSignInKey())
-                 .compact();
+         return buildToken(claims, userDetails, jwtExpiration);
+    }
+
+    public String generateRefreshToken( UserDetails userDetails) {
+        return buildToken(new HashMap<>(), userDetails, refreshExpiration);
+    }
+
+
+    private String buildToken(Map<String, Object> claims, UserDetails userDetails, Long expiration) {
+        return Jwts
+                .builder()
+                .claims(claims)
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignInKey())
+                .compact();
+
     }
 
     private Claims extractClaims(String token) {
@@ -81,7 +98,7 @@ public class JwtUtils {
 
     private Key getSignInKey() {
 
-        byte[] keyBytes = Decoders.BASE64.decode(Constants.SECRET_KEY);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 

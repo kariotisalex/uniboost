@@ -7,12 +7,14 @@ import com.alexkariotis.uniboost.dto.user.UserCreateDto;
 import com.alexkariotis.uniboost.mapper.user.UserMapper;
 import com.alexkariotis.uniboost.service.UserService;
 import io.vavr.control.Try;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping(Constants.USER)
@@ -33,7 +35,7 @@ public class UserController {
                 .recoverWith(ex ->
                         Try.success(ResponseEntity
                                 .badRequest()
-                                .body(new AuthenticationResponseDto(ex.getMessage())))
+                                .body(new AuthenticationResponseDto()))
                 )
                 .getOrElseThrow(ex ->
                         new RuntimeException("User didn't create. Please report the problem to admin.", ex));
@@ -43,7 +45,7 @@ public class UserController {
     public ResponseEntity<AuthenticationResponseDto> login(
             @RequestBody AuthenticationRequestDto authenticationRequestDto
     ) {
-        System.out.println();
+
         return userService
                 .authenticate(authenticationRequestDto)
                 .map(body -> ResponseEntity.ok().body(body))
@@ -51,8 +53,16 @@ public class UserController {
                 .recoverWith(ex ->
                         Try.success(ResponseEntity
                                 .badRequest()
-                                .body(new AuthenticationResponseDto(ex.getMessage())))
+                                .body(new AuthenticationResponseDto()))
                 ).getOrElseThrow(ex ->
                         new RuntimeException("User didn't create. Please report the problem to admin.", ex));
+    }
+
+    @PostMapping("refresh-token")
+    public void refreshToken(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws IOException {
+         userService.refreshToken(request, response);
     }
 }

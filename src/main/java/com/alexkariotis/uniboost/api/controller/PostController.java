@@ -7,6 +7,7 @@ import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
 import com.alexkariotis.uniboost.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +40,7 @@ public class PostController {
             @RequestParam(name = "page"  , required = false, defaultValue = "0") int page,
             @RequestParam(name = "size"  , required = false, defaultValue = "10") int size,
             @RequestParam(name = "sort"  , required = false, defaultValue = "updatedAt") String sort,
-            @RequestHeader("Authorization") String auth
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
 
     ) {
         String username = jwtUtils.extractUsername(auth.substring(7));
@@ -67,7 +68,7 @@ public class PostController {
             @RequestParam(name = "page", required = false, defaultValue = "0") int page,
             @RequestParam(name = "size", required = false, defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false, defaultValue = "updatedAt") String sort,
-            @RequestHeader("Authorization") String auth
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
     ) {
         String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.getOwnersPosts()");
@@ -84,7 +85,7 @@ public class PostController {
     @PostMapping()
     public ResponseEntity<PostCreateDto> create(
             @RequestBody PostCreateDto createDto,
-            @RequestHeader("Authorization") String auth
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
     ) {
         String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.create()");
@@ -98,7 +99,7 @@ public class PostController {
     @PutMapping
     public ResponseEntity<PostUpdateDto> update(
             @RequestBody PostUpdateDto updateDto,
-            @RequestHeader("Authorization") String auth
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
     ) {
         String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.update()");
@@ -110,7 +111,7 @@ public class PostController {
 
     @DeleteMapping("{postId}")
     public ResponseEntity<Void> delete(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("postId") UUID postId
     ) {
         String username = jwtUtils.extractUsername(auth.substring(7));
@@ -125,7 +126,7 @@ public class PostController {
 
     @DeleteMapping("{userId}/{postId}")
     public ResponseEntity<Void> deleteEnrolledStudent(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("postId") UUID postId,
             @PathVariable("userId") UUID userId
     ) {
@@ -149,7 +150,7 @@ public class PostController {
      */
     @PostMapping("enroll/{postId}")
     public ResponseEntity<PostResponseDto> enroll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("postId") UUID postId
     ) {
 
@@ -169,7 +170,7 @@ public class PostController {
      */
     @PostMapping("disenroll/{postId}")
     public ResponseEntity<PostResponseDto> disenroll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("postId") UUID postId
     ) {
         String username = jwtUtils.extractUsername(auth.substring(7));

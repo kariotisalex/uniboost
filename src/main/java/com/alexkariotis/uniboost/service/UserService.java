@@ -8,18 +8,25 @@ import com.alexkariotis.uniboost.domain.repository.TokenRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
 import com.alexkariotis.uniboost.dto.user.AuthenticationRequestDto;
 import com.alexkariotis.uniboost.dto.user.AuthenticationResponseDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.Tuple;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -36,7 +43,7 @@ public class UserService {
 
 
     public Try<AuthenticationResponseDto> register(User user) {
-        log.info("AuthenticationService.register(User user)");
+        log.info("UserService.register(User user)");
         return Option.ofOptional(userRepository.findByUsername(user.getUsername()))
                 .fold(() -> Option.ofOptional(userRepository.findByEmail(user.getEmail()))
                         .fold(() -> Try.of(() -> user)
@@ -48,15 +55,24 @@ public class UserService {
                                     return u;
                                 })
                                 .map(userRepository::save)
-                                .map(fetchedUser -> Tuple.of(fetchedUser, jwtUtils.generateToken(fetchedUser)))
-                                .map(tuple -> createAndSaveToken(tuple._1, tuple._2))
-                                .map(tokenObj -> new AuthenticationResponseDto(tokenObj.getToken()))
+                                .map(fetchedUser -> Tuple.of(fetchedUser,
+                                        jwtUtils.generateToken(fetchedUser),
+                                        jwtUtils.generateRefreshToken(fetchedUser)))
+                                .map(tuple -> Tuple.of(saveAccessToken(tuple._1, tuple._2)
+                                        .getOrElseThrow(ex ->
+                                                new RuntimeException("Access Tokens haven't saved in databased!", ex))
+                                        ,tuple._3))
+                                .map(tuple -> AuthenticationResponseDto
+                                        .builder()
+                                        .accessToken(tuple._1.getToken())
+                                        .refreshToken(tuple._2)
+                                        .build())
                         ,ignoredUserByEmail -> Try.failure(new IllegalArgumentException("Email already exists")))
                 ,ignoredUserByUsername -> Try.failure(new IllegalArgumentException("Username already exists")));
     }
 
     public Try<AuthenticationResponseDto> authenticate(AuthenticationRequestDto requestDto) {
-        log.info("AuthenticationService.authenticate(AuthenticationRequestDto requestDto)");
+        log.info("UserService.authenticate(AuthenticationRequestDto requestDto)");
         return Try.of(() -> Option.ofOptional(userRepository.findByUsername(requestDto.getUsername()))
                         .getOrElseThrow(() -> new IllegalArgumentException("There is no user with this username")))
                 .flatMap(user -> Try.of(() -> authenticationManager.authenticate(
@@ -67,31 +83,80 @@ public class UserService {
                         .recover(BadCredentialsException.class, e -> {
                             throw new IllegalArgumentException("Wrong password provided", e);
                         }))
-                .map(user -> Tuple.of(user, jwtUtils.generateToken(user)))
-                .flatMap(tuple -> Try.of(()-> tokenRepository.findAllValidTokensByUser(tuple._1.getId()))
-                            .map(tokens -> tokens
-                                    .stream()
-                                    .map(token -> {
-                                        token.setExpired(true);
-                                        token.setRevoked(true);
-                                        return token;
-                                    }).toList())
-                            .map(tokenRepository::saveAll)
+                .map(user -> Tuple.of(
+                        user,
+                        jwtUtils.generateToken(user),
+                        jwtUtils.generateRefreshToken(user)))
+                .flatMap(tuple -> revokeAllAccessTokens(tuple._1)
                             .map(ignored -> tuple))
-                .map(tuple -> createAndSaveToken(tuple._1, tuple._2))
-                .map(tokenObj -> new AuthenticationResponseDto(tokenObj.getToken()));
+                .map(tuple -> Tuple.of(saveAccessToken(tuple._1, tuple._2)
+                        .getOrElseThrow(ex -> new RuntimeException("Access Token didn't save in database.", ex))
+                        ,tuple._3))
+                .map(tuple -> AuthenticationResponseDto
+                        .builder()
+                        .accessToken(tuple._1.getToken())
+                        .refreshToken(tuple._2)
+                        .build());
     }
 
 
-    private Token createAndSaveToken(User user, String token) {
-        Token tokenObj = Token.builder()
-                .id(UUID.randomUUID())
-                .user(user)
-                .token(token)
-                .tokenTypeEnum(TokenTypeEnum.BEARER)
-                .revoked(false)
-                .expired(false)
-                .build();
-        return tokenRepository.save(tokenObj);
+
+
+    public void refreshToken(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        final String refreshToken;
+        final String username;
+
+        if(authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return;
+        }
+        refreshToken = authHeader.substring(7);
+        username = jwtUtils.extractUsername(refreshToken);
+
+        if(username != null) {
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("Username not found"));
+            if(jwtUtils.isTokenValid(refreshToken, user) ) {
+                var accessToken = jwtUtils.generateToken(user);
+                revokeAllAccessTokens(user);
+                saveAccessToken(user,accessToken);
+                var authResponse = AuthenticationResponseDto
+                        .builder()
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .build();
+
+
+                new ObjectMapper().writeValue(response.getOutputStream(),authResponse);
+            }
+        }
+    }
+
+
+
+    private Try<Token> saveAccessToken(User user, String token) {
+        return Try.of(() -> tokenRepository
+                .save(Token.builder()
+                        .id(UUID.randomUUID())
+                        .user(user)
+                        .token(token)
+                        .tokenTypeEnum(TokenTypeEnum.BEARER)
+                        .revoked(false)
+                        .expired(false)
+                        .build()));
+    }
+
+    private Try<List<Token>> revokeAllAccessTokens(User user) {
+        return Try.of(()-> tokenRepository.findAllValidTokensByUser(user.getId()))
+                .map(tokens -> tokens
+                        .stream()
+                        .map(token -> {
+                            token.setExpired(true);
+                            token.setRevoked(true);
+                            return token;
+                        }).toList())
+                .map(tokenRepository::saveAllAndFlush);
     }
 }
