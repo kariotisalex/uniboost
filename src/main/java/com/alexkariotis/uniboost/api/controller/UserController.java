@@ -48,13 +48,9 @@ public class UserController {
 
         return userService
                 .authenticate(authenticationRequestDto)
-                .map(body -> ResponseEntity.ok().body(body))
+                .map(ResponseEntity::ok)
                 .onFailure(Throwable::printStackTrace)
-                .recoverWith(ex ->
-                        Try.success(ResponseEntity
-                                .badRequest()
-                                .body(new AuthenticationResponseDto()))
-                ).getOrElseThrow(ex ->
+                .getOrElseThrow(ex ->
                         new RuntimeException("User didn't create. Please report the problem to admin.", ex));
     }
 

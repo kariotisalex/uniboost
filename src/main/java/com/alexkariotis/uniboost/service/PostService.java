@@ -1,5 +1,7 @@
 package com.alexkariotis.uniboost.service;
 
+import com.alexkariotis.uniboost.common.exception.PostNotFoundException;
+import com.alexkariotis.uniboost.common.exception.PostOwnershipException;
 import com.alexkariotis.uniboost.domain.entity.Post;
 import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.PostRepository;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,10 +47,10 @@ public class PostService {
     public Try<Post> enroll(final String username, final UUID postId) {
         return Try.of(() -> postRepository.findById(postId)) // d
                 .flatMap(postOpt -> Option.ofOptional(postOpt)
-                        .toTry(() -> new IllegalArgumentException("There is no post with id: " + postId)))
+                        .toTry(() -> new PostNotFoundException("There is no post with id: " + postId)))
                 .flatMap(post -> Try.of(() -> userRepository.findByUsername(username))
                         .flatMap(userOpt -> Option.ofOptional(userOpt)
-                                .toTry(() -> new IllegalArgumentException("There is no user with username: " + username)))
+                                .toTry(() -> new UsernameNotFoundException("There is no user with username: " + username)))
                         .flatMap(user -> {
                             io.vavr.collection.List<User> enrolledUsers = io.vavr.collection.List.ofAll(post.getEnrolledUsers());
 
@@ -68,6 +71,7 @@ public class PostService {
                 .onFailure(Throwable::printStackTrace);
     }
 
+    @Transactional
     public Try<Post> disenroll(final String username, final UUID postId) {
         return Try.of(() -> postRepository.findById(postId))
                 .flatMap(postOpt -> Option.ofOptional(postOpt)
@@ -92,10 +96,10 @@ public class PostService {
                         }));
     }
 
-
+    @Transactional
     public Try<PostCreateDto> create(PostCreateDto createDto, String username) {
         return Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
-                .getOrElseThrow(() -> new IllegalArgumentException("There is no user with username: " + username)))
+                .getOrElseThrow(() -> new UsernameNotFoundException("There is no user with username: " + username)))
                 .map(user -> {
                     Post post = new Post();
                     post.setId(UUID.randomUUID());
@@ -114,13 +118,13 @@ public class PostService {
                 .onFailure(Throwable::printStackTrace);
 
     }
-
+    @Transactional
     public Try<PostUpdateDto> update(PostUpdateDto updateDto, String username) {
         return Try.of(() -> Option.ofOptional(postRepository.findById(updateDto.getId()))
                         .getOrElseThrow(() -> new IllegalArgumentException(
                                 "There is no post with id: "+updateDto.getId())))
                 .filter(post -> Objects.equals(post.getCreatedBy().getUsername(), username),
-                        () -> new IllegalArgumentException("Updating of this post is not possible due to user is not the owner of the post!"))
+                        () -> new PostOwnershipException("Updating of this post is not possible due to user is not the owner of the post!"))
 
                         .map(post -> {
                             post.setTitle(updateDto.getTitle());
@@ -134,7 +138,7 @@ public class PostService {
                         .map(PostMapper::postToPostUpdateDto)
                         .onFailure(Throwable::printStackTrace);
     }
-
+    @Transactional
     public Try<Void> delete(String username, UUID postId) {
         return Try.of(() -> Option.ofOptional(postRepository.findById(postId))
                 .getOrElseThrow(() -> new IllegalArgumentException("There is no post with id: " + postId)))
@@ -144,7 +148,7 @@ public class PostService {
                 .flatMap(post -> Try.run(()-> postRepository.deleteById(postId)));
 
     }
-
+    @Transactional
     public Try<Void> deleteEnrolledStudent(String username, UUID postId, UUID userId) {
         return Try.of(() -> Option.ofOptional(postRepository.findById(postId))
                 .getOrElseThrow(() -> new IllegalArgumentException("There is no post with id: " + postId)))

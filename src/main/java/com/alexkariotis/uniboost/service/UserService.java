@@ -74,7 +74,7 @@ public class UserService {
     public Try<AuthenticationResponseDto> authenticate(AuthenticationRequestDto requestDto) {
         log.info("UserService.authenticate(AuthenticationRequestDto requestDto)");
         return Try.of(() -> Option.ofOptional(userRepository.findByUsername(requestDto.getUsername()))
-                        .getOrElseThrow(() -> new IllegalArgumentException("There is no user with this username")))
+                        .getOrElseThrow(() -> new UsernameNotFoundException("There is no user with username: "+requestDto.getUsername())))
                 .flatMap(user -> Try.of(() -> authenticationManager.authenticate(
                                 new UsernamePasswordAuthenticationToken(
                                         requestDto.getUsername(),
@@ -117,7 +117,7 @@ public class UserService {
 
         if(username != null) {
             User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Username not found"));
+                    .orElseThrow(() -> new UsernameNotFoundException("Username: "+username+" not found"));
             if(jwtUtils.isTokenValid(refreshToken, user) ) {
                 var accessToken = jwtUtils.generateToken(user);
                 revokeAllAccessTokens(user);
