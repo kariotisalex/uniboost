@@ -1,6 +1,7 @@
 package com.alexkariotis.uniboost.service.exception;
 
 import com.alexkariotis.uniboost.common.exception.PostOwnershipException;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -13,26 +14,20 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ProblemDetail> handleException(Exception ex) {
-        return new ResponseEntity<>(
-                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,ex.getMessage()),
-                HttpStatus.BAD_REQUEST
-        );
-    }
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleUsernameNotFoundException(Exception ex) {
+
         return new ResponseEntity<>(
-                ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,ex.getMessage()),
-                HttpStatus.NOT_FOUND
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,"Please place valid credentials!"),
+                HttpStatus.BAD_REQUEST
         );
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ProblemDetail> handleBadCredentialsException(Exception ex) {
         return new ResponseEntity<>(
-                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,ex.getMessage()),
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,"Please place valid credentials!"),
                 HttpStatus.BAD_REQUEST
         );
     }
@@ -40,8 +35,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ProblemDetail> handleRuntimeException(Exception ex) {
         return new ResponseEntity<>(
-                ProblemDetail.forStatusAndDetail(HttpStatus.NOT_IMPLEMENTED,ex.getMessage()),
-                HttpStatus.NOT_IMPLEMENTED
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,ex.getMessage()),
+                HttpStatus.BAD_REQUEST
         );
     }
 
@@ -52,5 +47,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 HttpStatus.BAD_REQUEST
         );
     }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleException(Exception ex) {
+        return new ResponseEntity<>(
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,ex.getMessage()),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+
 
 }

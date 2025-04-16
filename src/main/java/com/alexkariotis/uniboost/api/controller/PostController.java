@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 @RequestMapping(Constants.POST)
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "http://localhost:4200")
 public class PostController {
 
     private final PostService postService;

@@ -10,7 +10,6 @@ import io.vavr.control.Try;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +18,7 @@ import java.io.IOException;
 @RestController
 @RequestMapping(Constants.USER)
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
 
     private final UserService userService;
@@ -50,8 +50,7 @@ public class UserController {
                 .authenticate(authenticationRequestDto)
                 .map(ResponseEntity::ok)
                 .onFailure(Throwable::printStackTrace)
-                .getOrElseThrow(ex ->
-                        new RuntimeException("User didn't create. Please report the problem to admin.", ex));
+                .get();
     }
 
     @PostMapping("refresh-token")
@@ -61,4 +60,7 @@ public class UserController {
     ) throws IOException {
          userService.refreshToken(request, response);
     }
+
+//    @PostMapping("myprofile")
+//    public ResponseEntity<User> myProfile()
 }

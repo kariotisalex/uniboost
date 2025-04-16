@@ -100,8 +100,12 @@ public class UserService {
     }
 
 
-
-
+    /**
+     * Just refresh the access_token keeps the refresh_token the same
+     * @param request .
+     * @param response .
+     * @throws IOException .
+     */
     public void refreshToken(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
