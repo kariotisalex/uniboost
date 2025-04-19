@@ -2,8 +2,10 @@ package com.alexkariotis.uniboost.service;
 
 import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
 import com.alexkariotis.uniboost.common.TokenTypeEnum;
+import com.alexkariotis.uniboost.domain.entity.ResetToken;
 import com.alexkariotis.uniboost.domain.entity.Token;
 import com.alexkariotis.uniboost.domain.entity.User;
+import com.alexkariotis.uniboost.domain.repository.ResetTokenRepository;
 import com.alexkariotis.uniboost.domain.repository.TokenRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
 import com.alexkariotis.uniboost.dto.user.AuthenticationRequestDto;
@@ -17,6 +19,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +29,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,6 +46,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
+    private final ResetTokenRepository resetTokenRepository;
+    private final EmailService emailService;
 
 
     public Try<AuthenticationResponseDto> register(User user) {
@@ -140,6 +148,7 @@ public class UserService {
 
 
 
+
     private Try<Token> saveAccessToken(User user, String token) {
         return Try.of(() -> tokenRepository
                 .save(Token.builder()
@@ -163,4 +172,26 @@ public class UserService {
                         }).toList())
                 .map(tokenRepository::saveAllAndFlush);
     }
+
+    public Try<Void> resetPassword(String token, String password) {
+        return Try.of(() -> resetTokenRepository.findByToken(token)
+                .orElseThrow(()-> new RuntimeException("Invalid Token!")))
+                .filter(resetToken -> !resetToken.isUsed() &&
+                                resetToken.getExpiredAt().after(new Date(System.currentTimeMillis())),
+                        ex -> new RuntimeException("This token is used!"))
+                .map(resetToken -> {
+                    resetToken.getUser().setPassword(passwordEncoder.encode(password));
+                    resetToken.setUsed(true);
+                    return resetTokenRepository.saveAndFlush(resetToken);
+                }).map(r -> null);
+    }
+
+    public Try<Void> requestToken(String username) {
+        return Try.of(() -> userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Username not found")))
+                .map(user -> resetTokenRepository.saveAndFlush(ResetToken.newToken(user)))
+                .flatMap(resetToken -> emailService.initiatePasswordReset(resetToken.getUser(),resetToken.getToken()));
+
+    }
+
 }

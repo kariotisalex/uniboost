@@ -30,7 +30,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(req -> req
-                        .requestMatchers("/user/login", "/user/register", "/user/refresh-token")
+                        .requestMatchers("/user/login", "/user/register", "/user/refresh-token", "/user/request-token", "/user/reset-password")
                         .permitAll()
                         .requestMatchers("/post/**")
                         .authenticated()

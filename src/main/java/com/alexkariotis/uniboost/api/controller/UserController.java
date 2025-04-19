@@ -1,6 +1,7 @@
 package com.alexkariotis.uniboost.api.controller;
 
 import com.alexkariotis.uniboost.common.Constants;
+import com.alexkariotis.uniboost.dto.post.ResetPasswordRequestDto;
 import com.alexkariotis.uniboost.dto.user.AuthenticationRequestDto;
 import com.alexkariotis.uniboost.dto.user.AuthenticationResponseDto;
 import com.alexkariotis.uniboost.dto.user.UserCreateDto;
@@ -59,6 +60,25 @@ public class UserController {
             HttpServletResponse response
     ) throws IOException {
          userService.refreshToken(request, response);
+    }
+
+    @PostMapping("reset-password")
+    public ResponseEntity<Void> resetPassword(
+            @RequestParam(name = "token", required = true) String token,
+            @RequestBody ResetPasswordRequestDto requestDto
+            ) {
+        return userService.resetPassword(token, requestDto.getPassword())
+                .map(ResponseEntity::ok)
+                .get();
+    }
+
+    @PostMapping("request-token")
+    public ResponseEntity<Void> requestToken(
+            @RequestParam(name = "username", required = true) String username
+    ) {
+        return userService.requestToken(username)
+                .map(ResponseEntity::ok)
+                .get();
     }
 
 //    @PostMapping("myprofile")
