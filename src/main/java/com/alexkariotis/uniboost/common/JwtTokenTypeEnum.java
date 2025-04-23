@@ -1,5 +1,5 @@
 package com.alexkariotis.uniboost.common;
 
-public enum TokenTypeEnum {
+public enum JwtTokenTypeEnum {
     BEARER
 }

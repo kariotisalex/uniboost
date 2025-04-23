@@ -70,7 +70,7 @@ public class User implements UserDetails {
     private RoleEnum role;
 
     @OneToMany(mappedBy = "user")
-    private List<Token> tokens;
+    private List<JwtToken> jwtTokens;
 
 
     @Override

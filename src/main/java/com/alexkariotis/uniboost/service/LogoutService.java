@@ -1,6 +1,6 @@
 package com.alexkariotis.uniboost.service;
 
-import com.alexkariotis.uniboost.domain.entity.Token;
+import com.alexkariotis.uniboost.domain.entity.JwtToken;
 import com.alexkariotis.uniboost.domain.repository.TokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,13 +29,13 @@ public class LogoutService implements LogoutHandler {
         }
         jwt = authHeader.substring(7);
 
-        Token token = tokenRepository.findByToken(jwt)
+        JwtToken jwtToken = tokenRepository.findByToken(jwt)
                 .orElse(null);
 
-        if (token != null) {
-            token.setExpired(true);
-            token.setRevoked(true);
-            tokenRepository.saveAndFlush(token);
+        if (jwtToken != null) {
+            jwtToken.setExpired(true);
+            jwtToken.setRevoked(true);
+            tokenRepository.saveAndFlush(jwtToken);
         }
 
     }

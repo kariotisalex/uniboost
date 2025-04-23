@@ -1,9 +1,9 @@
 package com.alexkariotis.uniboost.service;
 
 import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
-import com.alexkariotis.uniboost.common.TokenTypeEnum;
+import com.alexkariotis.uniboost.common.JwtTokenTypeEnum;
+import com.alexkariotis.uniboost.domain.entity.JwtToken;
 import com.alexkariotis.uniboost.domain.entity.ResetToken;
-import com.alexkariotis.uniboost.domain.entity.Token;
 import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.ResetTokenRepository;
 import com.alexkariotis.uniboost.domain.repository.TokenRepository;
@@ -19,8 +19,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,7 +27,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -149,26 +146,26 @@ public class UserService {
 
 
 
-    private Try<Token> saveAccessToken(User user, String token) {
+    private Try<JwtToken> saveAccessToken(User user, String token) {
         return Try.of(() -> tokenRepository
-                .save(Token.builder()
+                .save(JwtToken.builder()
                         .id(UUID.randomUUID())
                         .user(user)
                         .token(token)
-                        .tokenTypeEnum(TokenTypeEnum.BEARER)
+                        .jwtTokenTypeEnum(JwtTokenTypeEnum.BEARER)
                         .revoked(false)
                         .expired(false)
                         .build()));
     }
 
-    private Try<List<Token>> revokeAllAccessTokens(User user) {
+    private Try<List<JwtToken>> revokeAllAccessTokens(User user) {
         return Try.of(()-> tokenRepository.findAllValidTokensByUser(user.getId()))
                 .map(tokens -> tokens
                         .stream()
-                        .map(token -> {
-                            token.setExpired(true);
-                            token.setRevoked(true);
-                            return token;
+                        .map(jwtToken -> {
+                            jwtToken.setExpired(true);
+                            jwtToken.setRevoked(true);
+                            return jwtToken;
                         }).toList())
                 .map(tokenRepository::saveAllAndFlush);
     }

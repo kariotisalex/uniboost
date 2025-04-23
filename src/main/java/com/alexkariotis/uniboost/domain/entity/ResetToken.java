@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
-@Table(name = "RESET_TOKEN")
+@Table(name = "SECURE_TOKEN")
 @Getter
 @Setter
 @Builder

@@ -1,5 +1,5 @@
 CREATE TYPE RoleEnum AS ENUM ('USER', 'ADMIN');
-CREATE TYPE TokenTypeEnum AS ENUM ('BEARER');
+CREATE TYPE JwtTokenTypeEnum AS ENUM ('BEARER');
 
 CREATE TABLE IF NOT EXISTS USER_ (
              id UUID PRIMARY KEY,
@@ -35,17 +35,17 @@ CREATE TABLE IF NOT EXISTS ENROLL_TABLE (
             CONSTRAINT fk_enroll_post FOREIGN KEY (post_id) REFERENCES POST(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS TOKEN (
+CREATE TABLE IF NOT EXISTS JWT_TOKEN (
            id UUID PRIMARY KEY,
            token VARCHAR(255) NOT NULL UNIQUE,
-           token_type_enum TokenTypeEnum NOT NULL,
+           token_type_enum JwtTokenTypeEnum NOT NULL,
            expired BOOLEAN NOT NULL,
            revoked BOOLEAN NOT NULL,
            user_id UUID,
            CONSTRAINT fk_token_user FOREIGN KEY (user_id) REFERENCES USER_(id)
 );
 
-CREATE TABLE RESET_TOKEN (
+CREATE TABLE IF NOT EXISTS SECURE_TOKEN (
             id UUID PRIMARY KEY,
             token VARCHAR NOT NULL UNIQUE,
             expired_at TIMESTAMP NOT NULL,
