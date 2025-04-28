@@ -1,10 +1,8 @@
 package com.alexkariotis.uniboost.mapper.post;
 
 import com.alexkariotis.uniboost.domain.entity.Post;
-import com.alexkariotis.uniboost.dto.post.PostCreateDto;
-import com.alexkariotis.uniboost.dto.post.PostResponseDto;
-import com.alexkariotis.uniboost.dto.post.PostResponseOwnerDto;
-import com.alexkariotis.uniboost.dto.post.PostUpdateDto;
+import com.alexkariotis.uniboost.domain.entity.User;
+import com.alexkariotis.uniboost.dto.post.*;
 import com.alexkariotis.uniboost.dto.user.UserPostResponseDto;
 
 public class PostMapper {
@@ -17,7 +15,7 @@ public class PostMapper {
             PostResponseDto responseDto = new PostResponseDto();
             responseDto.setId(post.getId());
             responseDto.setTitle(post.getTitle());
-            responseDto.setDescription(post.getDescription());
+            responseDto.setPreviewDescription(post.getPreviewDescription());
             responseDto.setMaxEnrolls(post.getMaxEnrolls());
             responseDto.setIsPersonal(post.getIsPersonal());
             responseDto.setPlace(post.getPlace());
@@ -98,5 +96,45 @@ public class PostMapper {
             updateDto.setPlace(post.getPlace());
             return updateDto;
         }
+    }
+
+    public static PostDetailsResponseDto postToPostDetailsResponseDto(Post post,String username) {
+        if (post == null) {
+            return null;
+        }
+        PostDetailsResponseDto responseDto = new PostDetailsResponseDto();
+        responseDto.setId(post.getId());
+        responseDto.setTitle(post.getTitle());
+        responseDto.setPreviewDescription(post.getPreviewDescription());
+        responseDto.setDescription(post.getDescription());
+
+        responseDto.setEnrollments(post.getEnrolledUsers().size());
+        responseDto.setMaxEnrolls(post.getMaxEnrolls());
+
+        responseDto.setIsPersonal(post.getIsPersonal());
+        responseDto.setPlace(post.getPlace());
+
+
+        responseDto.setOwner(post.getCreatedBy().getUsername().equals(username));
+        if (responseDto.isOwner()){
+            responseDto.setUserOwner(null);
+        } else {
+            User user = post.getCreatedBy();
+            UserPostResponseDto userDto = new UserPostResponseDto();
+
+            userDto.setUsername(user.getUsername());
+            userDto.setFirstname(user.getFirstname());
+            userDto.setLastname(user.getLastname());
+            userDto.setEmail(user.getEmail());
+            userDto.setPhone(user.getPhone());
+
+            responseDto.setUserOwner(userDto);
+        }
+        responseDto.setEnrolled(post.getEnrolledUsers()
+                .stream().anyMatch(user ->user.getUsername().equals(username)));
+
+        return responseDto;
+
+
     }
 }

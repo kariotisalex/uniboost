@@ -7,16 +7,19 @@ import lombok.Setter;
 
 import java.util.UUID;
 
+
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class PostResponseDto {
+public class PostDetailsResponseDto {
 
     private UUID id;
 
     private String title;
 
     private String previewDescription;
+
+    private String Description;
 
     private Integer maxEnrolls;
 
@@ -27,4 +30,8 @@ public class PostResponseDto {
     private UserPostResponseDto userOwner;
 
     private Integer enrollments;
+
+    private boolean isEnrolled;
+
+    private boolean isOwner;
 }

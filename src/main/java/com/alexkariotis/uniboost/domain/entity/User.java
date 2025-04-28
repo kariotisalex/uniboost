@@ -49,7 +49,7 @@ public class User implements UserDetails {
     //    /**
     //     * One User can be the owner of post and can have many posts.
     //     */
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "createdBy", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
     private List<Post> postsOwnedByMe;
 
     /**

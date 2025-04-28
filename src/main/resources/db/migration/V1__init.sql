@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS USER_ (
 CREATE TABLE IF NOT EXISTS POST (
             id UUID PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
+            preview_description VARCHAR,
             description TEXT,
             max_enrolls INT NOT NULL,
             is_personal BOOLEAN NOT NULL,

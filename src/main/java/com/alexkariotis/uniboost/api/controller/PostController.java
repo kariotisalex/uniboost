@@ -183,5 +183,16 @@ public class PostController {
     }
 
 
+    @GetMapping("{postId}")
+    public ResponseEntity<PostDetailsResponseDto> getPostById(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
+            @PathVariable("postId") UUID postId
+    ){
+        String username = jwtUtils.extractUsername(auth.substring(7));
+        log.info("PostController.getPostById({})", postId);
+        return postService.getPostById(username,postId)
+                .map(ResponseEntity::ok)
+                .getOrElseThrow(ex -> new RuntimeException("Something went wrong while getting post.", ex));
+    }
 
 }

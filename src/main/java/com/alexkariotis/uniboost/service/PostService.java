@@ -7,6 +7,8 @@ import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.PostRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
 import com.alexkariotis.uniboost.dto.post.PostCreateDto;
+import com.alexkariotis.uniboost.dto.post.PostDetailsResponseDto;
+import com.alexkariotis.uniboost.dto.post.PostResponseDto;
 import com.alexkariotis.uniboost.dto.post.PostUpdateDto;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
 import io.vavr.control.Option;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -104,6 +107,7 @@ public class PostService {
                     Post post = new Post();
                     post.setId(UUID.randomUUID());
                     post.setTitle(createDto.getTitle());
+                    post.setPreviewDescription(createDto.getPreviewDescription());
                     post.setDescription(createDto.getDescription());
                     post.setMaxEnrolls(createDto.getMaxEnrolls());
                     post.setIsPersonal(createDto.getIsPersonal());
@@ -111,7 +115,6 @@ public class PostService {
                     post.setCreatedBy(user);
                     post.setCreatedAt(OffsetDateTime.now());
                     post.setUpdatedAt(OffsetDateTime.now());
-//                    post.setEnrolledUsers(new ArrayList<>());
                     return postRepository.saveAndFlush(post);
                 })
                 .map(PostMapper::postToPostCreateDto)
@@ -167,5 +170,13 @@ public class PostService {
                 .map(post -> null);
 //                ;
 
+    }
+
+    public Try<PostDetailsResponseDto> getPostById(String username, UUID postId) {
+
+        return Try.of(() -> Option.ofOptional(postRepository.findById(postId))
+                .getOrElseThrow((() -> new IllegalArgumentException("There is no post with id: " + postId))))
+                .map(post -> PostMapper.postToPostDetailsResponseDto(post,username))
+                .onFailure(Throwable::printStackTrace);
     }
 }

@@ -11,6 +11,8 @@ public class PostCreateDto {
 
     private String title;
 
+    private String previewDescription;
+
     private String description;
 
     private Integer maxEnrolls;
