@@ -48,26 +48,23 @@ public class PostService {
 
     @Transactional
     public Try<Post> enroll(final String username, final UUID postId) {
-        return Try.of(() -> postRepository.findById(postId)) // d
-                .flatMap(postOpt -> Option.ofOptional(postOpt)
-                        .toTry(() -> new PostNotFoundException("There is no post with id: " + postId)))
-                .flatMap(post -> Try.of(() -> userRepository.findByUsername(username))
-                        .flatMap(userOpt -> Option.ofOptional(userOpt)
-                                .toTry(() -> new UsernameNotFoundException("There is no user with username: " + username)))
+        return Try.of(() -> Option.ofOptional(postRepository.findById(postId))
+                        .getOrElseThrow(() -> new PostNotFoundException("There is no post with id: " + postId)))
+                .flatMap(post -> Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
+                                .getOrElseThrow(() -> new UsernameNotFoundException("There is no user with username: " + username)))
                         .flatMap(user -> {
                             io.vavr.collection.List<User> enrolledUsers = io.vavr.collection.List.ofAll(post.getEnrolledUsers());
 
-                            return Try.of(()-> post)
+                            return Try.of(() -> post)
                                     .filter(p -> p.getMaxEnrolls() > enrolledUsers.size(),
                                             () -> new IllegalStateException("Cannot enroll: The lesson is full."))
                                     .filter(p -> !p.getCreatedBy().equals(user),
-                                            () -> new IllegalArgumentException("You cannot enroll if you are the owner of post" + username))
+                                            () -> new IllegalArgumentException("You cannot enroll if you are the owner of the post: " + username))
                                     .filter(p -> !enrolledUsers.contains(user),
-                                            () -> new IllegalArgumentException("You have enrolled the user with id: " + username))
+                                            () -> new IllegalArgumentException("User already enrolled: " + username))
                                     .map(p -> {
-                                        enrolledUsers.append(user);
-                                        p.setEnrolledUsers(enrolledUsers.asJava());
-                                        postRepository.flush();
+                                        io.vavr.collection.List<User> updatedUsers = enrolledUsers.append(user);
+                                        p.setEnrolledUsers(new ArrayList<>(updatedUsers.asJava()));
                                         return postRepository.saveAndFlush(p);
                                     });
                         }))

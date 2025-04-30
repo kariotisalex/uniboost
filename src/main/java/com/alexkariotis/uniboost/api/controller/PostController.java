@@ -150,7 +150,7 @@ public class PostController {
      *
      */
     @PostMapping("enroll/{postId}")
-    public ResponseEntity<PostResponseDto> enroll(
+    public ResponseEntity<PostDetailsResponseDto> enroll(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("postId") UUID postId
     ) {
@@ -158,7 +158,7 @@ public class PostController {
         String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.enroll(), {} : {}", username, postId);
         return postService.enroll(username, postId)
-                .map(PostMapper::postToPostResponseDto)
+                .map(post -> PostMapper.postToPostDetailsResponseDto(post, username))
                 .map(ResponseEntity::ok)
                 .getOrElseThrow(ex -> new RuntimeException("Something went wrong while enrolling user to post.", ex));
     }
@@ -170,14 +170,14 @@ public class PostController {
      * @return The PostResponseDto that excludes the new user.
      */
     @PostMapping("disenroll/{postId}")
-    public ResponseEntity<PostResponseDto> disenroll(
+    public ResponseEntity<PostDetailsResponseDto> disenroll(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("postId") UUID postId
     ) {
         String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.disenroll(), {} : {}", username, postId);
         return postService.disenroll(username, postId)
-                .map(PostMapper::postToPostResponseDto)
+                .map(post -> PostMapper.postToPostDetailsResponseDto(post, username))
                 .map(ResponseEntity::ok)
                 .getOrElseThrow(ex -> new RuntimeException("Something went wrong while disenrolling user to post.", ex));
     }

@@ -43,7 +43,7 @@ public class Post {
     @JoinColumn(name = "user_id", nullable = false)
     private User createdBy;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinTable(
             name = "enroll_table",
             joinColumns = @JoinColumn(name = "post_id"),
