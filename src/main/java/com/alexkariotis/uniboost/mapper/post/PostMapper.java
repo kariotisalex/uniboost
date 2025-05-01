@@ -40,18 +40,12 @@ public class PostMapper {
             PostResponseOwnerDto responseDto = new PostResponseOwnerDto();
             responseDto.setId(post.getId());
             responseDto.setTitle(post.getTitle());
+            responseDto.setPreviewDescription(post.getPreviewDescription());
             responseDto.setDescription(post.getDescription());
+            responseDto.setEnrollments(post.getEnrolledUsers().size());
             responseDto.setMaxEnrolls(post.getMaxEnrolls());
             responseDto.setIsPersonal(post.getIsPersonal());
             responseDto.setPlace(post.getPlace());
-
-            UserPostResponseDto createdByDto = new UserPostResponseDto();
-            createdByDto.setUsername(post.getCreatedBy().getUsername());
-            createdByDto.setFirstname(post.getCreatedBy().getFirstname());
-            createdByDto.setLastname(post.getCreatedBy().getLastname());
-            createdByDto.setEmail(post.getCreatedBy().getEmail());
-            createdByDto.setPhone(post.getCreatedBy().getPhone());
-
 
             responseDto.setEnrolledStudents(post.getEnrolledUsers()
                     .stream()

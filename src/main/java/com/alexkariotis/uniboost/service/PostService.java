@@ -6,10 +6,7 @@ import com.alexkariotis.uniboost.domain.entity.Post;
 import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.PostRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
-import com.alexkariotis.uniboost.dto.post.PostCreateDto;
-import com.alexkariotis.uniboost.dto.post.PostDetailsResponseDto;
-import com.alexkariotis.uniboost.dto.post.PostResponseContainerDto;
-import com.alexkariotis.uniboost.dto.post.PostUpdateDto;
+import com.alexkariotis.uniboost.dto.post.*;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -180,11 +177,17 @@ public class PostService {
     }
 
     public Try<PostResponseContainerDto> findEnrolledByUsername(int page, int size, String sort, String username) {
-        return Try.of(() -> postRepository.findEnrolledPostsByUsername(username, PageRequest.of(page,size,Sort.by(sort).descending())))
+        return Try.of(() -> postRepository.findEnrolledPostsByUsername(username, PageRequest.of(page,size,Sort.by(sort).ascending())))
                 .map(posts -> new PostResponseContainerDto(
-                        posts.stream().map(PostMapper::postToPostResponseDto).toList(),
-                        posts.getTotalElements()
-                ));
+                                    posts.stream().map(PostMapper::postToPostResponseDto).toList(),
+                                    posts.getTotalElements())
+                );
 
+    }
+
+    public Try<PostResponseOwnerDto> getMyPostById(UUID postId, String username) {
+        return Try.of(() -> Option.ofOptional(postRepository.findByIdAndUsername(postId, username))
+                .getOrElseThrow(() -> new IllegalArgumentException("There is no post with id: " + postId)))
+                .map(PostMapper::postToPostResponseOwnerDto);
     }
 }

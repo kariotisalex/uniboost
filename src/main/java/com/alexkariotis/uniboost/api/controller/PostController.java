@@ -213,6 +213,18 @@ public class PostController {
                 .map(ResponseEntity::ok)
                 .get();
     }
+    @GetMapping("mypost/{postId}")
+    public ResponseEntity<PostResponseOwnerDto> getMyPostById(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
+            @PathVariable("postId") UUID postId
+    ){
+        String username = jwtUtils.extractUsername(auth.substring(7));
+        log.info("PostController.getMyPostById({})", postId);
+        return postService.getMyPostById(postId, username)
+                .onFailure(Throwable::printStackTrace)
+                .map(ResponseEntity::ok)
+                .get();
+    }
 
 
     // Opoios den exei mualo exei podia
