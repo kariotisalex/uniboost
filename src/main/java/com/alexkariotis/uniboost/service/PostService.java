@@ -6,7 +6,10 @@ import com.alexkariotis.uniboost.domain.entity.Post;
 import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.PostRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
-import com.alexkariotis.uniboost.dto.post.*;
+import com.alexkariotis.uniboost.dto.post.PostCreateDto;
+import com.alexkariotis.uniboost.dto.post.PostDetailsResponseDto;
+import com.alexkariotis.uniboost.dto.post.PostResponseContainerDto;
+import com.alexkariotis.uniboost.dto.post.PostUpdateDto;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -14,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -178,12 +180,11 @@ public class PostService {
     }
 
     public Try<PostResponseContainerDto> findEnrolledByUsername(int page, int size, String sort, String username) {
-        return Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
-                .getOrElseThrow(()-> new IllegalArgumentException("There is no user with username : "+username)))
-                .map(user -> user.getEnrolledPosts()
-                        .stream()
-                        .map(post -> PostMapper.postToPostResponseDto(post))
-                        .toList())
-                .map()
+        return Try.of(() -> postRepository.findEnrolledPostsByUsername(username, PageRequest.of(page,size,Sort.by(sort).descending())))
+                .map(posts -> new PostResponseContainerDto(
+                        posts.stream().map(PostMapper::postToPostResponseDto).toList(),
+                        posts.getTotalElements()
+                ));
+
     }
 }

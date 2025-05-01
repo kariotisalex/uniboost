@@ -99,6 +99,8 @@ public class PostController {
         log.info("PostController.getOwnersPosts()");
 
         return postService.findEnrolledByUsername(page, size, sort, username)
+                .map(ResponseEntity::ok)
+                .get();
 
     }
 
