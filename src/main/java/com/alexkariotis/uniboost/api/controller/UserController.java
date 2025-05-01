@@ -11,6 +11,7 @@ import io.vavr.control.Try;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,10 +20,15 @@ import java.io.IOException;
 @RestController
 @RequestMapping(Constants.USER)
 @RequiredArgsConstructor
+@Slf4j
 @CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
 
+
     private final UserService userService;
+
+
+
 
 
     @PostMapping("register")
@@ -33,13 +39,7 @@ public class UserController {
                 .register(UserMapper.userCreateDtoToUser(createDto))
                 .map(ResponseEntity::ok)
                 .onFailure(Throwable::printStackTrace)
-                .recoverWith(ex ->
-                        Try.success(ResponseEntity
-                                .badRequest()
-                                .body(new AuthenticationResponseDto()))
-                )
-                .getOrElseThrow(ex ->
-                        new RuntimeException("User didn't create. Please report the problem to admin.", ex));
+                .get();
     }
 
     @PostMapping("login")
@@ -64,7 +64,7 @@ public class UserController {
 
     @PostMapping("reset-password")
     public ResponseEntity<Void> resetPassword(
-            @RequestParam(name = "token", required = true) String token,
+            @RequestParam(name = "token") String token,
             @RequestBody ResetPasswordRequestDto requestDto
             ) {
         return userService.resetPassword(token, requestDto.getPassword())
@@ -74,13 +74,17 @@ public class UserController {
 
     @PostMapping("request-token")
     public ResponseEntity<Void> requestToken(
-            @RequestParam(name = "username", required = true) String username
+            @RequestParam(name = "username") String username
     ) {
         return userService.requestToken(username)
                 .map(ResponseEntity::ok)
                 .get();
     }
+// END OF AUTHORIZATION
 
-//    @PostMapping("myprofile")
-//    public ResponseEntity<User> myProfile()
+
+
+
+
+
 }

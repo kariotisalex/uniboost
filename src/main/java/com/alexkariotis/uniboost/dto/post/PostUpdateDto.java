@@ -18,6 +18,8 @@ public class PostUpdateDto {
 
     private String title;
 
+    private String previewDescription;
+
     private String description;
 
     private Integer maxEnrolls;

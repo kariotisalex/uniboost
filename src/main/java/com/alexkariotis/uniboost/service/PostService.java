@@ -6,10 +6,7 @@ import com.alexkariotis.uniboost.domain.entity.Post;
 import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.PostRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
-import com.alexkariotis.uniboost.dto.post.PostCreateDto;
-import com.alexkariotis.uniboost.dto.post.PostDetailsResponseDto;
-import com.alexkariotis.uniboost.dto.post.PostResponseDto;
-import com.alexkariotis.uniboost.dto.post.PostUpdateDto;
+import com.alexkariotis.uniboost.dto.post.*;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -38,7 +35,7 @@ public class PostService {
 
     public Try<Page<Post>> findByTitle(String title, Integer page, Integer size, String sort, String username) {
         return Try.of(() -> postRepository
-                .findByTitle(title.toLowerCase(), username, PageRequest.of(page, size, Sort.by(sort).ascending())));
+                .findByTitle(title.toLowerCase(), username, PageRequest.of(page, size, Sort.by(sort).descending())));
     }
 
     public Try<Page<Post>> findByUsername(int page, int size, String sort, String username) {
@@ -47,7 +44,7 @@ public class PostService {
     }
 
     @Transactional
-    public Try<Post> enroll(final String username, final UUID postId) {
+    public Try<PostDetailsResponseDto> enroll(final String username, final UUID postId) {
         return Try.of(() -> Option.ofOptional(postRepository.findById(postId))
                         .getOrElseThrow(() -> new PostNotFoundException("There is no post with id: " + postId)))
                 .flatMap(post -> Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
@@ -67,12 +64,12 @@ public class PostService {
                                         p.setEnrolledUsers(new ArrayList<>(updatedUsers.asJava()));
                                         return postRepository.saveAndFlush(p);
                                     });
-                        }))
+                        })).map(post -> PostMapper.postToPostDetailsResponseDto(post, username))
                 .onFailure(Throwable::printStackTrace);
     }
 
     @Transactional
-    public Try<Post> disenroll(final String username, final UUID postId) {
+    public Try<PostDetailsResponseDto> disenroll(final String username, final UUID postId) {
         return Try.of(() -> postRepository.findById(postId))
                 .flatMap(postOpt -> Option.ofOptional(postOpt)
                         .toTry(() -> new IllegalArgumentException("There is no post with id: " + postId)))
@@ -93,13 +90,15 @@ public class PostService {
                                         postRepository.flush();
                                         return postRepository.saveAndFlush(p);
                                     });
-                        }));
+                        })).map(post -> PostMapper.postToPostDetailsResponseDto(post, username));
     }
 
     @Transactional
     public Try<PostCreateDto> create(PostCreateDto createDto, String username) {
         return Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
                 .getOrElseThrow(() -> new UsernameNotFoundException("There is no user with username: " + username)))
+                .filter(user -> user.getPostsOwnedByMe().stream().noneMatch(post -> Objects.equals(post.getTitle(), createDto.getTitle()))
+                ,() ->new IllegalArgumentException("The title is already use by this user."))
                 .map(user -> {
                     Post post = new Post();
                     post.setId(UUID.randomUUID());
@@ -128,6 +127,7 @@ public class PostService {
 
                         .map(post -> {
                             post.setTitle(updateDto.getTitle());
+                            post.setPreviewDescription(updateDto.getPreviewDescription());
                             post.setDescription(updateDto.getDescription());
                             post.setMaxEnrolls(updateDto.getMaxEnrolls());
                             post.setIsPersonal(updateDto.getIsPersonal());
@@ -175,5 +175,15 @@ public class PostService {
                 .getOrElseThrow((() -> new IllegalArgumentException("There is no post with id: " + postId))))
                 .map(post -> PostMapper.postToPostDetailsResponseDto(post,username))
                 .onFailure(Throwable::printStackTrace);
+    }
+
+    public Try<PostResponseContainerDto> findEnrolledByUsername(int page, int size, String sort, String username) {
+        return Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
+                .getOrElseThrow(()-> new IllegalArgumentException("There is no user with username : "+username)))
+                .map(user -> user.getEnrolledPosts()
+                        .stream()
+                        .map(post -> PostMapper.postToPostResponseDto(post))
+                        .toList())
+                .map()
     }
 }

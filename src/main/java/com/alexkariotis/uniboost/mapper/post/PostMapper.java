@@ -90,6 +90,7 @@ public class PostMapper {
             PostUpdateDto updateDto = new PostUpdateDto();
             updateDto.setId(post.getId());
             updateDto.setTitle(post.getTitle());
+            updateDto.setPreviewDescription(post.getPreviewDescription());
             updateDto.setDescription(post.getDescription());
             updateDto.setMaxEnrolls(post.getMaxEnrolls());
             updateDto.setIsPersonal(post.getIsPersonal());

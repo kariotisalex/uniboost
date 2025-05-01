@@ -1,16 +1,20 @@
 package com.alexkariotis.uniboost.api.controller;
 
+import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
 import com.alexkariotis.uniboost.common.Constants;
 import com.alexkariotis.uniboost.dto.post.*;
+import com.alexkariotis.uniboost.dto.user.UserInfoRequestDto;
+import com.alexkariotis.uniboost.dto.user.UserPostResponseDto;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
-import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
 import com.alexkariotis.uniboost.service.PostService;
+import com.alexkariotis.uniboost.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 public class PostController {
 
     private final PostService postService;
+    private final UserService userService;
     private final JwtUtils jwtUtils;
 
     /**
@@ -65,7 +70,7 @@ public class PostController {
      * @return a container with paginated list and total number of elements.
      */
     @GetMapping ("myposts")
-    public ResponseEntity<PostResponseOwnerContainerDto> getOwnersPosts(
+    public ResponseEntity<PostResponseContainerDto> getOwnersPosts(
             @RequestParam(name = "page", required = false, defaultValue = "0") int page,
             @RequestParam(name = "size", required = false, defaultValue = "10") int size,
             @RequestParam(name = "sort", required = false, defaultValue = "updatedAt") String sort,
@@ -75,11 +80,25 @@ public class PostController {
         log.info("PostController.getOwnersPosts()");
 
         return postService.findByUsername(page, size, sort, username)
-                .map(posts -> new PostResponseOwnerContainerDto(
-                        posts.stream().map(PostMapper::postToPostResponseOwnerDto).collect(Collectors.toList()),
+                .map(posts -> new PostResponseContainerDto(
+                        posts.stream().map(PostMapper::postToPostResponseDto).collect(Collectors.toList()),
                         posts.getTotalElements()))
                 .map(ResponseEntity::ok)
-                .getOrElseThrow(ex -> new RuntimeException("Something went wrong while fetching owners.", ex));
+                .get();
+
+    }
+
+    @GetMapping("enrolledposts")
+    public ResponseEntity<PostResponseContainerDto> getEnrolledPosts(
+            @RequestParam(name = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(name = "size", required = false, defaultValue = "10") int size,
+            @RequestParam(name = "sort", required = false, defaultValue = "updatedAt") String sort,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
+    ){
+        String username = jwtUtils.extractUsername(auth.substring(7));
+        log.info("PostController.getOwnersPosts()");
+
+        return postService.findEnrolledByUsername(page, size, sort, username)
 
     }
 
@@ -93,7 +112,7 @@ public class PostController {
 
         return postService.create(createDto, username)
                 .map(ResponseEntity::ok)
-                .getOrElseThrow(ex -> new RuntimeException("Something went wrong while creating post.", ex));
+                .get();
     }
 
 
@@ -107,7 +126,7 @@ public class PostController {
 
         return postService.update(updateDto, username)
                 .map(ResponseEntity::ok)
-                .getOrElseThrow(ex -> new RuntimeException("Something went wrong while updating post.", ex));
+                .get();
     }
 
     @DeleteMapping("{postId}")
@@ -121,7 +140,7 @@ public class PostController {
         return postService
                 .delete(username, postId)
                 .map(ResponseEntity::ok)
-                .getOrElseThrow(ex -> new RuntimeException("Something went wrong while deleting post.", ex));
+                .get();
     }
 
 
@@ -137,8 +156,7 @@ public class PostController {
         return postService
                 .deleteEnrolledStudent(username,postId,userId)
                 .map(ResponseEntity::ok)
-                .getOrElseThrow(ex ->
-                        new RuntimeException("Something went wrong while deleting enrolled student from post.", ex));
+                .get();
     }
 
 
@@ -158,9 +176,9 @@ public class PostController {
         String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.enroll(), {} : {}", username, postId);
         return postService.enroll(username, postId)
-                .map(post -> PostMapper.postToPostDetailsResponseDto(post, username))
+
                 .map(ResponseEntity::ok)
-                .getOrElseThrow(ex -> new RuntimeException("Something went wrong while enrolling user to post.", ex));
+                .get();
     }
 
     /**
@@ -177,9 +195,8 @@ public class PostController {
         String username = jwtUtils.extractUsername(auth.substring(7));
         log.info("PostController.disenroll(), {} : {}", username, postId);
         return postService.disenroll(username, postId)
-                .map(post -> PostMapper.postToPostDetailsResponseDto(post, username))
                 .map(ResponseEntity::ok)
-                .getOrElseThrow(ex -> new RuntimeException("Something went wrong while disenrolling user to post.", ex));
+                .get();
     }
 
 
@@ -192,7 +209,68 @@ public class PostController {
         log.info("PostController.getPostById({})", postId);
         return postService.getPostById(username,postId)
                 .map(ResponseEntity::ok)
-                .getOrElseThrow(ex -> new RuntimeException("Something went wrong while getting post.", ex));
+                .get();
     }
+
+
+    // Opoios den exei mualo exei podia
+    // userController ala giftika
+
+    @GetMapping("userinfo")
+    public ResponseEntity<UserPostResponseDto> myDetails(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
+    ) {
+        String username = jwtUtils.extractUsername(auth.substring(7));
+        log.info("PostController.userInfo(");
+
+        return this.userService.findByUsername(username)
+                .onFailure(Throwable::printStackTrace)
+                .map(ResponseEntity::ok)
+
+                .get();
+    }
+
+
+    @PutMapping("userinfo")
+    public ResponseEntity<UserPostResponseDto> updateUserInfo(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
+            @RequestBody UserInfoRequestDto userPostResponseDto
+    ){
+        String username = jwtUtils.extractUsername(auth.substring(7));
+        log.info("PostController.updateUserInfo(");
+        return this.userService.updateUserInfo(username,userPostResponseDto)
+                .map(ResponseEntity::ok)
+                .get();
+
+    }
+
+    @PutMapping("email")
+    public ResponseEntity<UserPostResponseDto> updateEmail(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
+            @RequestBody Map<String, String> body
+    ){
+        String username = jwtUtils.extractUsername(auth.substring(7));
+        log.info("PostController.updateUserEmail()");
+        String email = body.get("email");
+        return userService.updateEmail(username,email)
+                .onFailure(Throwable::printStackTrace)
+                .map(ResponseEntity::ok)
+                .get();
+    }
+
+    @PutMapping("username")
+    public ResponseEntity<UserPostResponseDto> updateUsername(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
+            @RequestBody Map<String, String> body
+    ){
+        String username = jwtUtils.extractUsername(auth.substring(7));
+        log.info("PostController.updateUserUsername()");
+        String newUsername = body.get("newUsername");
+        return userService.updateUsername(username,newUsername)
+                .map(ResponseEntity::ok)
+                .get();
+    }
+
+
 
 }

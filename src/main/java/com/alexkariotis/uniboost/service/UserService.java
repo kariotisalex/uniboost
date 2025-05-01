@@ -10,6 +10,9 @@ import com.alexkariotis.uniboost.domain.repository.TokenRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
 import com.alexkariotis.uniboost.dto.user.AuthenticationRequestDto;
 import com.alexkariotis.uniboost.dto.user.AuthenticationResponseDto;
+import com.alexkariotis.uniboost.dto.user.UserInfoRequestDto;
+import com.alexkariotis.uniboost.dto.user.UserPostResponseDto;
+import com.alexkariotis.uniboost.mapper.user.UserMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.Tuple;
 import io.vavr.control.Option;
@@ -19,14 +22,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -190,5 +197,70 @@ public class UserService {
                 .flatMap(resetToken -> emailService.initiatePasswordReset(resetToken.getUser(),resetToken.getToken()));
 
     }
+
+
+
+    public Try<UserPostResponseDto> updateUserInfo(String username, UserInfoRequestDto userInfoRequestDto) {
+        return Try.of(()-> Option.ofOptional(userRepository.findByUsername(username))
+                .getOrElseThrow(() -> new IllegalArgumentException("There is no user with username"+username)))
+                .map(user -> {
+                    user.setFirstname(userInfoRequestDto.getFirstname());
+                    user.setLastname(userInfoRequestDto.getLastname());
+                    user.setPhone(userInfoRequestDto.getPhone());
+                    return userRepository.saveAndFlush(user);
+                }).map(UserMapper::usertoUserPostResponseDto);
+    }
+
+    public Try<UserPostResponseDto> updateUsername(String oldUsername, String newUsername) {
+        // Wrap the lookup of the user with the old username in a Try.
+        return Try.of(() ->
+                        // Try to find the user by oldUsername (returns Optional).
+                        // If the user is not found, throw an IllegalArgumentException.
+                        Option.ofOptional(userRepository.findByUsername(oldUsername))
+                                .getOrElseThrow(() -> new IllegalArgumentException("There is no user with this username: " + oldUsername))
+                )
+                // flatMap allows us to continue processing if the Try above was successful.
+                .flatMap(user ->
+                        // Try to find if the new username already exists.
+                        Option.ofOptional(userRepository.findByUsername(newUsername))
+                                // If a user with the new username exists, return a failed Try with an exception.
+                                .map(existingUser -> Try.<UserPostResponseDto>failure(new IllegalArgumentException("Username already exists!")))
+                                // If new username is available (Optional is empty), update the username and save.
+                                .getOrElse(() -> {
+                                    // Set the new username on the found user
+                                    user.setUsername(newUsername);
+                                    user.setUpdatedAt(OffsetDateTime.now());
+                                    // Save the updated user and map the result to a DTO inside a Try
+                                    return Try.of(() -> userRepository.saveAndFlush(user))
+                                            .map(UserMapper::usertoUserPostResponseDto);
+                                })
+                );
+    }
+    public Try<UserPostResponseDto> findByUsername(String username) {
+        return Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
+                        .getOrElseThrow(() -> new UsernameNotFoundException("There is no user with username : "+username)))
+                .map(UserMapper::usertoUserPostResponseDto);
+    }
+
+
+
+    public Try<UserPostResponseDto> updateEmail(String username, String email) {
+        return Try.of(() ->Option.ofOptional(userRepository.findByUsername(username))
+                                .getOrElseThrow(() -> new IllegalArgumentException("There is no user with this username: " + username)))
+                .flatMap(user ->
+                        Option.ofOptional(userRepository.findByEmail(email))
+                                .map(existingUser -> Try.<UserPostResponseDto>failure(new IllegalArgumentException("Username already exists!")))
+                                .getOrElse(() -> {
+                                    user.setEmail(email);
+                                    user.setUpdatedAt(OffsetDateTime.now());
+                                    return Try.of(() -> userRepository.saveAndFlush(user))
+                                            .map(UserMapper::usertoUserPostResponseDto);
+                                })
+                                .onFailure(Throwable::printStackTrace)
+                );
+
+    }
+
+
 
 }

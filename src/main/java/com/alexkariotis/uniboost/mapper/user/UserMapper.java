@@ -2,41 +2,22 @@ package com.alexkariotis.uniboost.mapper.user;
 
 import com.alexkariotis.uniboost.common.RoleEnum;
 import com.alexkariotis.uniboost.domain.entity.User;
-import com.alexkariotis.uniboost.dto.post.PostUserResponseDto;
 import com.alexkariotis.uniboost.dto.user.UserCreateDto;
-import com.alexkariotis.uniboost.dto.user.UserResponseDto;
-
-import java.util.stream.Collectors;
+import com.alexkariotis.uniboost.dto.user.UserPostResponseDto;
 
 public class UserMapper {
 
-    public static UserResponseDto usertoUserResponseDto(User user) {
+    public static UserPostResponseDto usertoUserPostResponseDto(User user) {
         if (user == null) {
             return null;
         }
 
-        UserResponseDto dto = new UserResponseDto();
-        dto.setId(user.getId());
+        UserPostResponseDto dto = new UserPostResponseDto();
         dto.setUsername(user.getUsername());
         dto.setFirstname(user.getFirstname());
         dto.setLastname(user.getLastname());
         dto.setEmail(user.getEmail());
         dto.setPhone(user.getPhone());
-
-        // Mapping posts
-        if (user.getPostsOwnedByMe() != null) {
-            dto.setPostsOwnedByMe(user.getPostsOwnedByMe()
-                    .stream()
-                    .map(post -> {
-
-                        PostUserResponseDto postUserResponseDto = new PostUserResponseDto();
-                        postUserResponseDto.setId(post.getId());
-                        postUserResponseDto.setTitle(post.getTitle());
-                        postUserResponseDto.setDescription(post.getDescription());
-
-                        return postUserResponseDto;
-                    }).collect(Collectors.toList()));
-        }
 
         return dto;
     }
