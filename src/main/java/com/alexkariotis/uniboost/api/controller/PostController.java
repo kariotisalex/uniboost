@@ -230,60 +230,7 @@ public class PostController {
     // Opoios den exei mualo exei podia
     // userController ala giftika
 
-    @GetMapping("userinfo")
-    public ResponseEntity<UserPostResponseDto> myDetails(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
-    ) {
-        String username = jwtUtils.extractUsername(auth.substring(7));
-        log.info("PostController.userInfo(");
 
-        return this.userService.findByUsername(username)
-                .onFailure(Throwable::printStackTrace)
-                .map(ResponseEntity::ok)
-
-                .get();
-    }
-
-
-    @PutMapping("userinfo")
-    public ResponseEntity<UserPostResponseDto> updateUserInfo(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
-            @RequestBody UserInfoRequestDto userPostResponseDto
-    ){
-        String username = jwtUtils.extractUsername(auth.substring(7));
-        log.info("PostController.updateUserInfo(");
-        return this.userService.updateUserInfo(username,userPostResponseDto)
-                .map(ResponseEntity::ok)
-                .get();
-
-    }
-
-    @PutMapping("email")
-    public ResponseEntity<UserPostResponseDto> updateEmail(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
-            @RequestBody Map<String, String> body
-    ){
-        String username = jwtUtils.extractUsername(auth.substring(7));
-        log.info("PostController.updateUserEmail()");
-        String email = body.get("email");
-        return userService.updateEmail(username,email)
-                .onFailure(Throwable::printStackTrace)
-                .map(ResponseEntity::ok)
-                .get();
-    }
-
-    @PutMapping("username")
-    public ResponseEntity<UserPostResponseDto> updateUsername(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
-            @RequestBody Map<String, String> body
-    ){
-        String username = jwtUtils.extractUsername(auth.substring(7));
-        log.info("PostController.updateUserUsername()");
-        String newUsername = body.get("newUsername");
-        return userService.updateUsername(username,newUsername)
-                .map(ResponseEntity::ok)
-                .get();
-    }
 
 
 

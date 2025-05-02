@@ -32,7 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> req
                         .requestMatchers("/user/login", "/user/register", "/user/refresh-token", "/user/forgot-password", "/user/reset-password")
                         .permitAll()
-                        .requestMatchers("/post/**")
+                        .requestMatchers("/post/**","/user/**")
                         .authenticated()
                 )
                 .sessionManagement(session -> session
