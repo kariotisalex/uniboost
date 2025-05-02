@@ -62,6 +62,15 @@ public class UserController {
          userService.refreshToken(request, response);
     }
 
+    @PostMapping("forgot-password")
+    public ResponseEntity<Void> requestToken(
+            @RequestParam(name = "username") String username
+    ) {
+        return userService.requestToken(username)
+                .map(ResponseEntity::ok)
+                .get();
+    }
+
     @PostMapping("reset-password")
     public ResponseEntity<Void> resetPassword(
             @RequestParam(name = "token") String token,
@@ -72,14 +81,7 @@ public class UserController {
                 .get();
     }
 
-    @PostMapping("request-token")
-    public ResponseEntity<Void> requestToken(
-            @RequestParam(name = "username") String username
-    ) {
-        return userService.requestToken(username)
-                .map(ResponseEntity::ok)
-                .get();
-    }
+
 // END OF AUTHORIZATION
 
 

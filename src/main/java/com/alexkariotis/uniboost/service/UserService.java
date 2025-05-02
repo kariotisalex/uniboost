@@ -8,6 +8,7 @@ import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.ResetTokenRepository;
 import com.alexkariotis.uniboost.domain.repository.TokenRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
+import com.alexkariotis.uniboost.dto.SendEmailDto;
 import com.alexkariotis.uniboost.dto.user.AuthenticationRequestDto;
 import com.alexkariotis.uniboost.dto.user.AuthenticationResponseDto;
 import com.alexkariotis.uniboost.dto.user.UserInfoRequestDto;
@@ -19,8 +20,11 @@ import io.vavr.control.Option;
 import io.vavr.control.Try;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,9 +45,13 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@Setter
+@Getter
 @RequiredArgsConstructor
 public class UserService {
 
+    @Value("${reset-password-request.domain}")
+    private String resetLink = "";
 
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
@@ -194,7 +202,23 @@ public class UserService {
         return Try.of(() -> userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Username not found")))
                 .map(user -> resetTokenRepository.saveAndFlush(ResetToken.newToken(user)))
-                .flatMap(resetToken -> emailService.initiatePasswordReset(resetToken.getUser(),resetToken.getToken()));
+                .flatMap(resetToken -> emailService.sendEmail(SendEmailDto.builder()
+                                .sendTo(resetToken.getUser().getEmail())
+                                .subject("Reset Your Password – Uniboost")
+                                .body("""
+            Hello %s,
+
+            We received a request to reset your password for your Uniboost account.
+
+            Click the link below to choose a new password:
+            %s
+
+            This link will expire in 30 minutes. If you didn't request a password reset, you can safely ignore this email.
+
+            Thanks,
+            The Uniboost Team
+            """.formatted(resetToken.getUser().getFirstname(), resetLink+resetToken.getToken()))
+                        .build()));
 
     }
 
