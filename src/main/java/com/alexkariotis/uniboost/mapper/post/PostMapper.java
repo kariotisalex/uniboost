@@ -51,6 +51,7 @@ public class PostMapper {
                     .stream()
                     .map(user -> {
                         UserPostResponseDto userDto = new UserPostResponseDto();
+                        userDto.setId(user.getId());
                         userDto.setUsername(user.getUsername());
                         userDto.setFirstname(user.getFirstname());
                         userDto.setLastname(user.getLastname());
@@ -83,7 +84,6 @@ public class PostMapper {
         } else {
             PostUpdateDto updateDto = new PostUpdateDto();
             updateDto.setId(post.getId());
-            updateDto.setTitle(post.getTitle());
             updateDto.setPreviewDescription(post.getPreviewDescription());
             updateDto.setDescription(post.getDescription());
             updateDto.setMaxEnrolls(post.getMaxEnrolls());

@@ -3,7 +3,6 @@ package com.alexkariotis.uniboost.api.controller;
 import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
 import com.alexkariotis.uniboost.common.Constants;
 import com.alexkariotis.uniboost.dto.post.*;
-import com.alexkariotis.uniboost.dto.user.UserInfoRequestDto;
 import com.alexkariotis.uniboost.dto.user.UserPostResponseDto;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
 import com.alexkariotis.uniboost.service.PostService;
@@ -14,7 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -119,7 +118,7 @@ public class PostController {
 
 
     @PutMapping
-    public ResponseEntity<PostUpdateDto> update(
+    public ResponseEntity<PostResponseOwnerDto> update(
             @RequestBody PostUpdateDto updateDto,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
     ) {
@@ -146,7 +145,7 @@ public class PostController {
     }
 
 
-    @DeleteMapping("{userId}/{postId}")
+    @DeleteMapping("disenroll/{userId}/{postId}")
     public ResponseEntity<Void> deleteEnrolledStudent(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("postId") UUID postId,
@@ -189,7 +188,7 @@ public class PostController {
      * @param postId post that the user will disenroll.
      * @return The PostResponseDto that excludes the new user.
      */
-    @PostMapping("disenroll/{postId}")
+    @DeleteMapping("disenroll/{postId}")
     public ResponseEntity<PostDetailsResponseDto> disenroll(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("postId") UUID postId
@@ -225,12 +224,6 @@ public class PostController {
                 .map(ResponseEntity::ok)
                 .get();
     }
-
-
-    // Opoios den exei mualo exei podia
-    // userController ala giftika
-
-
 
 
 

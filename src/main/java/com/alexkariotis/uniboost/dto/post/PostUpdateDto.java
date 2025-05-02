@@ -16,8 +16,6 @@ public class PostUpdateDto {
 
     private UUID id;
 
-    private String title;
-
     private String previewDescription;
 
     private String description;

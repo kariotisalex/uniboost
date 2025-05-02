@@ -7,6 +7,7 @@ import com.alexkariotis.uniboost.domain.entity.User;
 import com.alexkariotis.uniboost.domain.repository.PostRepository;
 import com.alexkariotis.uniboost.domain.repository.UserRepository;
 import com.alexkariotis.uniboost.dto.post.*;
+import com.alexkariotis.uniboost.dto.user.UserPostResponseDto;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -117,7 +119,7 @@ public class PostService {
 
     }
     @Transactional
-    public Try<PostUpdateDto> update(PostUpdateDto updateDto, String username) {
+    public Try<PostResponseOwnerDto> update(PostUpdateDto updateDto, String username) {
         return Try.of(() -> Option.ofOptional(postRepository.findById(updateDto.getId()))
                         .getOrElseThrow(() -> new IllegalArgumentException(
                                 "There is no post with id: "+updateDto.getId())))
@@ -125,7 +127,6 @@ public class PostService {
                         () -> new PostOwnershipException("Updating of this post is not possible due to user is not the owner of the post!"))
 
                         .map(post -> {
-                            post.setTitle(updateDto.getTitle());
                             post.setPreviewDescription(updateDto.getPreviewDescription());
                             post.setDescription(updateDto.getDescription());
                             post.setMaxEnrolls(updateDto.getMaxEnrolls());
@@ -134,7 +135,7 @@ public class PostService {
                             post.setUpdatedAt(OffsetDateTime.now());
                             return postRepository.saveAndFlush(post);
                         })
-                        .map(PostMapper::postToPostUpdateDto)
+                        .map(PostMapper::postToPostResponseOwnerDto)
                         .onFailure(Throwable::printStackTrace);
     }
     @Transactional
@@ -153,7 +154,8 @@ public class PostService {
                 .getOrElseThrow(() -> new IllegalArgumentException("There is no post with id: " + postId)))
                 .filter(post -> post.getCreatedBy().getUsername().equals(username),
                         () -> new IllegalArgumentException(
-                                "Deleting of enrolled student of post is not possible due to user is not the owner of the post!"))
+                                "Deleting the enrolled student from post is " +
+                                        "not possible due to user is not the owner of the post!"))
                 .map(post -> {
 
                     post.setEnrolledUsers(post
@@ -164,7 +166,6 @@ public class PostService {
                     return postRepository.saveAndFlush(post);
                 }).onFailure(Throwable::printStackTrace)
                 .map(post -> null);
-//                ;
 
     }
 
