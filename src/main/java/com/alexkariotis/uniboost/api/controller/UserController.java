@@ -60,6 +60,7 @@ public class UserController {
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
+        System.out.println("here");
          userService.refreshToken(request, response);
     }
 
@@ -78,6 +79,17 @@ public class UserController {
             @RequestBody ResetPasswordRequestDto requestDto
             ) {
         return userService.resetPassword(token, requestDto.getPassword())
+                .map(ResponseEntity::ok)
+                .get();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> delete(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
+    ) {
+        String username = jwtUtils.extractUsername(auth.substring(7));
+        return userService.delete(username)
+                .onFailure(Throwable::printStackTrace)
                 .map(ResponseEntity::ok)
                 .get();
     }

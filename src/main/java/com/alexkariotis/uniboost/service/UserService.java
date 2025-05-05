@@ -26,18 +26,13 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -50,7 +45,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
 
-    @Value("${reset-password-request.domain}")
+    @Value("${link.reset-password}")
     private String resetLink = "";
 
     private final UserRepository userRepository;
@@ -74,7 +69,37 @@ public class UserService {
                                     u.setUpdatedAt(OffsetDateTime.now());
                                     return u;
                                 })
-                                .map(userRepository::save)
+                                .map(userRepository::saveAndFlush)
+                                        .map(user1 -> {
+                                            emailService.sendEmail(SendEmailDto.builder()
+                                                    .sendTo(user1.getEmail())
+                                                    .subject("""
+                                                            Welcome to Uniboost – Your journey starts here
+                                                            """)
+                                                    .body("""
+                                                            Dear %s,
+                                                                                                                        
+                                                            Welcome to Uniboost! \s
+                                                            We're excited to have you as part of our academic community.
+                                                                                                                        
+                                                            With your new profile, you can now:
+                                                            • Enroll in courses \s
+                                                            • Track your progress \s
+                                                            • Connect with instructors \s
+                                                            • And access everything you need from your personal dashboard
+                                                                                                                        
+                                                            We recommend logging in and completing your profile to get the best experience.
+                                                                                                                        
+                                                            If you have any questions or need support, we’re here to help through the platform.
+                                                                                                                        
+                                                            This is an automated message sent by the Uniboost academic system. Please do not reply to this email.
+                                                                                                                        
+                                                            —
+                                                            Uniboost Academic Services
+                                                            """.formatted(user1.getFirstname()))
+                                                    .build());
+                                            return user1;
+                                        })
                                 .map(fetchedUser -> Tuple.of(fetchedUser,
                                         jwtUtils.generateToken(fetchedUser),
                                         jwtUtils.generateRefreshToken(fetchedUser)))
@@ -94,7 +119,7 @@ public class UserService {
     public Try<AuthenticationResponseDto> authenticate(AuthenticationRequestDto requestDto) {
         log.info("UserService.authenticate(AuthenticationRequestDto requestDto)");
         return Try.of(() -> Option.ofOptional(userRepository.findByUsername(requestDto.getUsername()))
-                        .getOrElseThrow(() -> new UsernameNotFoundException("There is no user with username: "+requestDto.getUsername())))
+                        .getOrElseThrow(() -> new IllegalArgumentException("There is no user with username: "+requestDto.getUsername())))
                 .flatMap(user -> Try.of(() -> authenticationManager.authenticate(
                                 new UsernamePasswordAuthenticationToken(
                                         requestDto.getUsername(),
@@ -141,7 +166,7 @@ public class UserService {
 
         if(username != null) {
             User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Username: "+username+" not found"));
+                    .orElseThrow(() -> new IllegalArgumentException("Username: "+username+" not found"));
             if(jwtUtils.isTokenValid(refreshToken, user) ) {
                 var accessToken = jwtUtils.generateToken(user);
                 revokeAllAccessTokens(user);
@@ -195,12 +220,32 @@ public class UserService {
                     resetToken.getUser().setPassword(passwordEncoder.encode(password));
                     resetToken.setUsed(true);
                     return resetTokenRepository.saveAndFlush(resetToken);
-                }).map(r -> null);
+                }).map(resetToken -> {
+                    emailService.sendEmail(SendEmailDto.builder()
+                        .sendTo(resetToken.getUser().getEmail())
+                        .subject("Your Uniboost Password Has Been Successfully Reset")
+                        .body("""
+                            Dear %s,
+                            
+                            We’re confirming that your password for your Uniboost account was successfully reset using a secure verification token.
+                            
+                            If you made this change, no further action is required.
+                            
+                            If you did **not** request this reset, we strongly recommend changing your password immediately and contacting support through the platform.
+                            
+                            This is an automated message. Please do not reply to this email.
+                            
+                            —
+                            Uniboost Security Services
+                            """.formatted(resetToken.getUser().getFirstname()))
+                        .build());
+                    return null;
+                });
     }
 
     public Try<Void> requestToken(String username) {
         return Try.of(() -> userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Username not found")))
+                .orElseThrow(() -> new IllegalArgumentException("Username not found")))
                 .map(user -> resetTokenRepository.saveAndFlush(ResetToken.newToken(user)))
                 .flatMap(resetToken -> emailService.sendEmail(SendEmailDto.builder()
                                 .sendTo(resetToken.getUser().getEmail())
@@ -262,7 +307,7 @@ public class UserService {
     }
     public Try<UserPostResponseDto> findByUsername(String username) {
         return Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
-                        .getOrElseThrow(() -> new UsernameNotFoundException("There is no user with username : "+username)))
+                        .getOrElseThrow(() -> new IllegalArgumentException("There is no user with username : "+username)))
                 .map(UserMapper::usertoUserPostResponseDto);
     }
 
@@ -286,5 +331,29 @@ public class UserService {
     }
 
 
-
+    public Try<Void> delete(String username) {
+        return Try.of(() -> Option.ofOptional(userRepository.findByUsername(username))
+                        .getOrElseThrow(() -> new IllegalArgumentException("There is no user with this username: "+username))
+                ).flatMap(user -> Try.run(() -> userRepository.delete(user))
+                .onFailure(Throwable::printStackTrace)
+                .flatMap(ignored -> emailService.sendEmail(SendEmailDto.builder()
+                        .sendTo(user.getEmail())
+                        .subject("""
+                                Account Deletion Confirmation – Your Uniboost profile has been removed
+                                """)
+                        .body("""
+                                Dear %s,
+                                
+                                This message is to confirm that your Uniboost profile has been successfully deleted.
+                                
+                                All associated course enrollments, personal information, and activity history have been permanently removed from our system in accordance with our data handling policies.
+                                
+                                If this action was performed in error, please note that account recovery is not possible. You are welcome to re-register at any time by creating a new profile.
+                                
+                                This is an automated message sent by the Uniboost academic system. Please do not reply to this email.
+                                
+                                —
+                                Uniboost Academic Services
+                                """.formatted(user.getFirstname())).build())));
+    }
 }

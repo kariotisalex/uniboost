@@ -55,7 +55,7 @@ public class User implements UserDetails {
     /**
      * Many Users can be enrolled in many lesson offers.
      */
-    @ManyToMany(mappedBy = "enrolledUsers",cascade = CascadeType.PERSIST)
+    @ManyToMany(mappedBy = "enrolledUsers",cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     private List<Post> enrolledPosts;
 
     @Column(name = "created_at")

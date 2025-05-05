@@ -3,7 +3,6 @@ package com.alexkariotis.uniboost.api.controller;
 import com.alexkariotis.uniboost.api.filter.utils.JwtUtils;
 import com.alexkariotis.uniboost.common.Constants;
 import com.alexkariotis.uniboost.dto.post.*;
-import com.alexkariotis.uniboost.dto.user.UserPostResponseDto;
 import com.alexkariotis.uniboost.mapper.post.PostMapper;
 import com.alexkariotis.uniboost.service.PostService;
 import com.alexkariotis.uniboost.service.UserService;
@@ -13,7 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -104,7 +102,7 @@ public class PostController {
     }
 
     @PostMapping()
-    public ResponseEntity<PostCreateDto> create(
+    public ResponseEntity<UUID> create(
             @RequestBody PostCreateDto createDto,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String auth
     ) {

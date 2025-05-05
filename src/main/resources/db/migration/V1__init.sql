@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS JWT_TOKEN (
            expired BOOLEAN NOT NULL,
            revoked BOOLEAN NOT NULL,
            user_id UUID,
-           CONSTRAINT fk_token_user FOREIGN KEY (user_id) REFERENCES USER_(id)
+           CONSTRAINT fk_token_user FOREIGN KEY (user_id) REFERENCES USER_(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS SECURE_TOKEN (
